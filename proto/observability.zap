@@ -7,11 +7,21 @@
 # views); the console copies it verbatim and compiles `--target=ts`. The field
 # set below is the single byte-for-byte contract both speak.
 #
-# This service replaces 8 console tRPC routers — the Langfuse-style OLTP backbone
+# This service replaces 13 console tRPC routers — the Langfuse-style OLTP backbone
 # (traces + observations + scores) plus their satellites (sessions, scoreConfigs,
-# events, scoreAnalytics). Reference: console/web/src/server/api/routers/{traces,
-# observations,sessions,scores,scoreConfigs}.ts and features/{score-analytics,
-# events}/server/*.ts.
+# events, scoreAnalytics), AND the presentation layer over them (dashboards,
+# widgets, table batch-actions, view presets, monitors). Reference:
+# console/web/src/server/api/routers/{traces,observations,sessions,scores,
+# scoreConfigs,dashboards,dashboardWidgets,tables,tableViewPresets,monitors}.ts
+# and features/{score-analytics,events}/server/*.ts.
+#
+# The dashboards half arrived as its own binary (hanzoai/dashboards, msgType 206)
+# before being folded in here. It was never a separate concern: a dashboard is a
+# saved QUERY over exactly the traces/observations/scores this service already
+# owns, and its three analytics methods (chart, scoreHistogram, executeQuery) are
+# the same ClickHouse aggregations the trace/score analytics methods below need.
+# Split across two binaries that shim would have been written twice, against two
+# copies of the same OLTP model. One service, one analytics shim, one cap gate.
 #
 # RPC surface (hand-dispatched in server/, exactly as cap/ hand-writes Verify on
 # top of zapgen'd views — zapgen emits DATA views, never method stubs). The
@@ -57,7 +67,48 @@
 #     scoreCountAll              @141 (TableQueryParams)      -> (Empty)   [STUB]
 #     eventAll                   @160 (TableQueryParams)      -> (Empty)   [STUB]
 #     analyticsScoreComparison   @180 (AnalyticsParams)       -> (Empty)   [STUB]
+#     # --- dashboards (OLTP CRUD, honest) -------------------------------
+#     allDashboards              @200 (ListReq)               -> (DashboardList)
+#     getDashboard               @201 (IdReq)                 -> (Dashboard)
+#     createDashboard            @202 (CreateDashReq)         -> (Dashboard)
+#     updateDashboardMetadata    @203 (UpdateDashReq)         -> (Dashboard)
+#     updateDashboardDef         @204 (DashDefReq)            -> (Dashboard)
+#     updateDashboardFilters     @205 (DashFiltersReq)        -> (Dashboard)
+#     cloneDashboard             @206 (IdReq)                 -> (Dashboard)
+#     deleteDashboard            @207 (IdReq)                 -> (Mutation)
+#     # --- widgets (OLTP CRUD, honest) ----------------------------------
+#     allWidgets                 @211 (ListReq)               -> (WidgetList)
+#     getWidget                  @212 (IdReq)                 -> (Widget)
+#     createWidget               @213 (WidgetReq)             -> (Widget)
+#     updateWidget               @214 (WidgetReq)             -> (Widget)
+#     copyWidgetToProject        @215 (CopyWidgetReq)         -> (Mutation)
+#     deleteWidget               @216 (IdReq)                 -> (Mutation)
+#     # --- table batch-action (BullMQ queue — STUBBED w/ TODO) ----------
+#     isBatchActionInProgress    @217 (BatchActionReq)        -> (BoolResult) [STUB]
+#     # --- table view presets (OLTP CRUD, honest) -----------------------
+#     getPresetsByTableName      @218 (PresetListReq)         -> (PresetList)
+#     getPresetById              @219 (IdReq)                 -> (Preset)
+#     createPreset               @220 (PresetReq)             -> (Preset)
+#     updatePreset               @221 (PresetReq)             -> (Preset)
+#     updatePresetName           @222 (PresetNameReq)         -> (Preset)
+#     deletePreset               @223 (IdReq)                 -> (Mutation)
+#     generatePermalink          @224 (PermalinkReq)          -> (StringResult)
+#     # --- monitors (OLTP CRUD, honest) ---------------------------------
+#     allMonitors                @225 (ListReq)               -> (MonitorList)
+#     getMonitor                 @226 (IdReq)                 -> (Monitor)
+#     createMonitor              @227 (MonitorReq)            -> (Monitor)
+#     updateMonitor              @228 (MonitorReq)            -> (Monitor)
+#     deleteMonitor              @229 (IdReq)                 -> (Mutation)
+#     # --- dashboard analytics (ClickHouse — STUBBED, shares the shim) --
+#     chart                      @240 (AnalyticsReq)          -> (AnalyticsResult) [STUB]
+#     scoreHistogram             @241 (AnalyticsReq)          -> (AnalyticsResult) [STUB]
+#     executeQuery               @242 (AnalyticsReq)          -> (AnalyticsResult) [STUB]
 #   }
+#
+# Ordinals ≥200 are the folded-in dashboards surface. They keep the ordinals the
+# standalone binary published (0–29) offset by 200 rather than renumbering into
+# the gaps above: the offset is mechanical and reversible, whereas renumbering
+# would silently repoint any client already built against the old ids.
 #
 # Permission model: the caller's verified Capability (CapKindIAMSession = 0x01)
 # carries a u64 Permissions bitmask. Each method gates on exactly one bit (the
@@ -423,4 +474,264 @@ struct AnalyticsParams {
 # "analytics shim not yet wired". See server.go handleStub.
 struct Empty {
     Stubbed bool @0
+}
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Dashboards surface — folded in from the standalone hanzoai/dashboards binary.
+# A dashboard is a saved query over the traces/observations/scores above; these
+# structs are its presentation model. Ordinals 200+ in the interface block.
+# ═══════════════════════════════════════════════════════════════════════════
+# ── Common request envelopes ────────────────────────────────────────────────
+
+# IdReq addresses one row by id within a project (getDashboard, getWidget,
+# cloneDashboard, delete*, getPresetById, getMonitor). id carries the
+# dashboardId / widgetId / presetId / monitorId.
+struct IdReq {
+    ProjectId text @0
+    Id        text @8
+}
+
+# ListReq is the paginated list envelope shared by allDashboards / allWidgets /
+# allMonitors. orderByColumn+orderByOrder mirror the tRPC `orderBy` object.
+struct ListReq {
+    ProjectId     text @0
+    Page          u32  @8
+    Limit         u32  @12
+    OrderByColumn text @16
+    OrderByOrder  text @24
+}
+
+# ── Dashboard ───────────────────────────────────────────────────────────────
+
+# Dashboard mirrors the DashboardDomain the tRPC router returned. `definition`,
+# `filters` carry the JSON blobs verbatim (the wire model of the structured
+# DashboardDefinition / filter array — opaque to the transport, parsed by the UI).
+struct Dashboard {
+    Id          text @0
+    ProjectId   text @8
+    Name        text @16
+    Description text @24
+    Owner       text @32   # "PROJECT" | "HANZO"
+    Definition  text @40   # JSON: { widgets: [...] }
+    Filters     text @48   # JSON: singleFilter[]
+    CreatedBy   text @56
+    CreatedAt   text @64   # RFC3339
+    UpdatedAt   text @72   # RFC3339
+}
+
+struct DashboardList {
+    Dashboards list<Dashboard> @0
+    TotalCount u32             @8
+}
+
+struct CreateDashReq {
+    ProjectId   text @0
+    Name        text @8
+    Description text @16
+}
+
+struct UpdateDashReq {
+    ProjectId   text @0
+    DashboardId text @8
+    Name        text @16
+    Description text @24
+}
+
+struct DashDefReq {
+    ProjectId   text @0
+    DashboardId text @8
+    Definition  text @16   # JSON: validated client-side against DashboardDefinitionSchema
+}
+
+struct DashFiltersReq {
+    ProjectId   text @0
+    DashboardId text @8
+    Filters     text @16   # JSON: singleFilter[]
+}
+
+# ── Widget ──────────────────────────────────────────────────────────────────
+
+# Widget mirrors WidgetDomain. dimensions/metrics/filters/chartConfig are JSON
+# blobs carried verbatim; view/chartType are the string enums.
+struct Widget {
+    Id          text @0
+    ProjectId   text @8
+    Name        text @16
+    Description text @24
+    View        text @32   # "traces" | "observations" | "scores-numeric" | "scores-categorical"
+    Owner       text @40   # "PROJECT" | "HANZO"
+    Dimensions  text @48   # JSON: DimensionSchema[]
+    Metrics     text @56   # JSON: MetricSchema[]
+    Filters     text @64   # JSON: singleFilter[]
+    ChartType   text @72
+    ChartConfig text @80   # JSON: ChartConfigSchema
+    CreatedAt   text @88   # RFC3339
+    UpdatedAt   text @96   # RFC3339
+}
+
+struct WidgetList {
+    Widgets    list<Widget> @0
+    TotalCount u32          @8
+}
+
+struct WidgetReq {
+    ProjectId   text @0
+    WidgetId    text @8    # "" on create
+    Name        text @16
+    Description text @24
+    View        text @32
+    Dimensions  text @40   # JSON
+    Metrics     text @48   # JSON
+    Filters     text @56   # JSON
+    ChartType   text @64
+    ChartConfig text @72   # JSON
+}
+
+struct CopyWidgetReq {
+    ProjectId   text @0
+    WidgetId    text @8
+    DashboardId text @16
+    PlacementId text @24
+}
+
+# ── Table batch-action ──────────────────────────────────────────────────────
+
+struct BatchActionReq {
+    ProjectId text @0
+    TableName text @8
+    ActionId  text @16
+}
+
+# ── TableViewPreset ─────────────────────────────────────────────────────────
+
+# Preset mirrors a TableViewPreset row. filters/columnOrder/columnVisibility are
+# JSON blobs carried verbatim.
+struct Preset {
+    Id               text @0
+    ProjectId        text @8
+    Name             text @16
+    TableName        text @24
+    Filters          text @32   # JSON: singleFilter[]
+    ColumnOrder      text @40   # JSON: string[]
+    ColumnVisibility text @48   # JSON: Record<string,bool>
+    SearchQuery      text @56
+    OrderByColumn    text @64
+    OrderByOrder     text @72
+    CreatedBy        text @80
+    CreatedAt        text @88   # RFC3339
+    UpdatedAt        text @96   # RFC3339
+}
+
+struct PresetList {
+    Presets list<Preset> @0
+}
+
+struct PresetListReq {
+    ProjectId text @0
+    TableName text @8
+}
+
+struct PresetReq {
+    ProjectId        text @0
+    PresetId         text @8    # "" on create
+    Name             text @16
+    TableName        text @24
+    Filters          text @32   # JSON
+    ColumnOrder      text @40   # JSON
+    ColumnVisibility text @48   # JSON
+    SearchQuery      text @56
+    OrderByColumn    text @64
+    OrderByOrder     text @72
+}
+
+struct PresetNameReq {
+    ProjectId text @0
+    PresetId  text @8
+    Name      text @16
+    TableName text @24
+}
+
+struct PermalinkReq {
+    ProjectId text @0
+    PresetId  text @8
+    TableName text @16
+    BaseUrl   text @24
+}
+
+# ── Monitor ─────────────────────────────────────────────────────────────────
+
+# Monitor mirrors a Monitor row. The query/threshold/state config travels as JSON
+# blobs verbatim (filters/metric/window/noData/renotify/tags), with the scalar
+# config and state columns broken out for typed access + ordering.
+struct Monitor {
+    Id                text @0
+    ProjectId         text @8
+    Name              text @16
+    View              text @24
+    Filters           text @32   # JSON: MonitorFilters
+    Metric            text @40   # JSON: MetricSchema
+    Window            text @48   # JSON: MonitorWindow
+    ThresholdOperator text @56
+    AlertThreshold    f64  @64
+    WarningThreshold  f64  @72   # NaN when null
+    NoData            text @80   # JSON: MonitorNoData
+    Renotify          text @88   # JSON: MonitorRenotify
+    Tags              text @96   # JSON: string[]
+    Status            text @104
+    Severity          text @112
+    SeverityChangedAt text @120  # RFC3339, "" when null
+    AlertedAt         text @128  # RFC3339, "" when null
+    NextRunAt         text @136  # RFC3339
+    CreatedBy         text @144
+    CreatedAt         text @152  # RFC3339
+    UpdatedAt         text @160  # RFC3339
+}
+
+struct MonitorList {
+    Monitors   list<Monitor> @0
+    TotalCount u32           @8
+}
+
+struct MonitorReq {
+    ProjectId         text @0
+    MonitorId         text @8    # "" on create
+    Name              text @16
+    View              text @24
+    Filters           text @32   # JSON
+    Metric            text @40   # JSON
+    Window            text @48   # JSON
+    ThresholdOperator text @56
+    AlertThreshold    f64  @64
+    WarningThreshold  f64  @72   # NaN when unset
+    NoData            text @80   # JSON
+    Renotify          text @88   # JSON
+    Tags              text @96   # JSON
+    Status            text @104
+}
+
+# ── Generic result envelopes ────────────────────────────────────────────────
+
+# Mutation is the { success } shape the delete/copy mutations returned.
+struct Mutation {
+    Success bool @0
+    Id      text @8   # affected/created id when applicable, else ""
+}
+
+struct StringResult {
+    Value text @0
+}
+
+# AnalyticsResult carries a ClickHouse query result back to the UI as a JSON
+# array (DatabaseRow[] / histogram bins / executeQuery rows). Opaque to the
+# transport — see server.go for the ClickHouse-shim wiring location.
+struct AnalyticsResult {
+    Rows text @0   # JSON array
+}
+
+struct AnalyticsReq {
+    ProjectId text @0
+    QueryName text @8    # nullable enum on chart; "" otherwise
+    Filter    text @16   # JSON: filterInterface
+    Query     text @24   # JSON: QueryType (executeQuery) | sqlInterface
+    Limit     u32  @32
 }

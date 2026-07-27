@@ -114,7 +114,13 @@ func EnsureCollections(app core.App) error {
 	if err := ensureScoreConfig(app); err != nil {
 		return err
 	}
-	return ensureScore(app)
+	if err := ensureScore(app); err != nil {
+		return err
+	}
+	// The dashboards surface (dash_collections.go) — saved queries over the
+	// tables above, provisioned in the same app so the analytics shim can join
+	// them without leaving the process.
+	return ensureDashboardCollections(app)
 }
 
 func has(app core.App, name string) bool {

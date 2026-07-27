@@ -33,6 +33,26 @@ const (
 	PermScoreConfigWrite uint64 = 1 << 8  // scoreConfigCreate, scoreConfigUpdate
 	PermEventWrite       uint64 = 1 << 9  // (reserved: event ingestion once writes land here)
 	PermAnalyticsRead    uint64 = 1 << 10 // all/countAll/metrics/filterOptions + scoreAnalytics (STUBBED)
+
+	// Dashboards surface (folded in). Widget and table-batch-action operations
+	// live under the Dashboard category — the console scopes them as
+	// dashboards:read / dashboards:CUD, so they reuse these bits rather than
+	// minting redundant ones.
+	//
+	//	PermDashboardRead ⇄ dashboards:read        PermDashboardWrite ⇄ dashboards:CUD
+	//	PermPresetRead    ⇄ TableViewPresets:read  PermPresetWrite    ⇄ TableViewPresets:CUD
+	//	PermMonitorRead   ⇄ monitors:read          PermMonitorWrite   ⇄ monitors:CUD
+	//
+	// chart/scoreHistogram/executeQuery do NOT get a bit here: they gate on
+	// PermAnalyticsRead above. The standalone binary carried its own duplicate
+	// analytics bit; the same aggregations answering under one bit is the whole
+	// reason these two services are one.
+	PermDashboardRead  uint64 = 1 << 11
+	PermDashboardWrite uint64 = 1 << 12
+	PermPresetRead     uint64 = 1 << 13
+	PermPresetWrite    uint64 = 1 << 14
+	PermMonitorRead    uint64 = 1 << 15
+	PermMonitorWrite   uint64 = 1 << 16
 )
 
 // methodPermission maps each method id to the single bit that admits it. A
@@ -78,6 +98,46 @@ var methodPermission = map[uint32]uint64{
 	MethodScoreCountAll:            PermAnalyticsRead,
 	MethodEventAll:                 PermAnalyticsRead,
 	MethodAnalyticsScoreComparison: PermAnalyticsRead,
+
+	// --- dashboards surface ---
+	MethodAllDashboards:  PermDashboardRead,
+	MethodGetDashboard:   PermDashboardRead,
+	MethodAllWidgets:     PermDashboardRead,
+	MethodGetWidget:      PermDashboardRead,
+	// Table batch-action progress is a dashboards:read scope upstream, so it
+	// gates on the Dashboard bit even though its data path is the queue.
+	MethodIsBatchActionInProgress: PermDashboardRead,
+
+	MethodCreateDashboard:        PermDashboardWrite,
+	MethodUpdateDashboardMeta:    PermDashboardWrite,
+	MethodUpdateDashboardDef:     PermDashboardWrite,
+	MethodUpdateDashboardFilters: PermDashboardWrite,
+	MethodCloneDashboard:         PermDashboardWrite,
+	MethodDeleteDashboard:        PermDashboardWrite,
+	MethodCreateWidget:           PermDashboardWrite,
+	MethodUpdateWidget:           PermDashboardWrite,
+	MethodCopyWidgetToProject:    PermDashboardWrite,
+	MethodDeleteWidget:           PermDashboardWrite,
+
+	MethodGetPresetsByTableName: PermPresetRead,
+	MethodGetPresetById:         PermPresetRead,
+	MethodGeneratePermalink:     PermPresetRead,
+	MethodCreatePreset:          PermPresetWrite,
+	MethodUpdatePreset:          PermPresetWrite,
+	MethodUpdatePresetName:      PermPresetWrite,
+	MethodDeletePreset:          PermPresetWrite,
+
+	MethodAllMonitors:   PermMonitorRead,
+	MethodGetMonitor:    PermMonitorRead,
+	MethodCreateMonitor: PermMonitorWrite,
+	MethodUpdateMonitor: PermMonitorWrite,
+	MethodDeleteMonitor: PermMonitorWrite,
+
+	// Dashboard analytics share the analytics bit with the trace/score
+	// aggregations above — one bit, one shim, one gate.
+	MethodChart:          PermAnalyticsRead,
+	MethodScoreHistogram: PermAnalyticsRead,
+	MethodExecuteQuery:   PermAnalyticsRead,
 }
 
 // Server implements the Observability ZAP capability-RPC interface on a Base
@@ -85,9 +145,8 @@ var methodPermission = map[uint32]uint64{
 // the single chokepoint authorize, then reading/writing a Base collection. The
 // Go peer of the console's ObservabilityTarget.
 type Server struct {
-	app        core.App
-	logger     luxlog.Logger
-	defaultOrg string
+	app    core.App
+	logger luxlog.Logger
 
 	// verifier validates capability buffers. Wired to ed25519 (bootstrap); a PQ
 	// deployment swaps in an ML-DSA-65 SchemeVerify + the IAM pubkey registry for
@@ -103,11 +162,12 @@ type Server struct {
 }
 
 // promiseSlot is a future for a pipelined call's answer. done is closed when the
-// slot resolves; org is then readable. The pipelined value is the authenticated
-// org. resolvedAt drives reaping.
+// slot resolves; project is then readable. The pipelined value is the resolved
+// PROJECT scope — that is what a dependent call inherits, and inheriting it is
+// what stops a pipelined call naming a different tenant. resolvedAt drives reaping.
 type promiseSlot struct {
 	done       chan struct{}
-	org        string
+	project    string
 	resolvedAt time.Time
 }
 
@@ -136,14 +196,14 @@ func (s *Server) reapLocked() {
 	}
 }
 
-func (s *Server) resolve(id uint32, org string) {
+func (s *Server) resolve(id uint32, project string) {
 	slot := s.getOrCreate(id)
 	s.mu.Lock()
 	select {
 	case <-slot.done:
 		// already resolved — leave as-is
 	default:
-		slot.org = org
+		slot.project = project
 		slot.resolvedAt = time.Now()
 		close(slot.done)
 	}
@@ -155,9 +215,9 @@ func (s *Server) await(target uint32) (string, bool) {
 	select {
 	case <-slot.done:
 		s.mu.Lock()
-		org := slot.org
+		project := slot.project
 		s.mu.Unlock()
-		return org, true
+		return project, true
 	case <-time.After(promiseWaitTimeout):
 		return "", false
 	}
@@ -165,13 +225,12 @@ func (s *Server) await(target uint32) (string, bool) {
 
 // NewServer builds an Observability server. verifier supplies the capability
 // trust anchor; pass a Verifier whose IssuerKey resolves your IAM issuer key.
-func NewServer(app core.App, logger luxlog.Logger, defaultOrg string, verifier zcap.Verifier) *Server {
+func NewServer(app core.App, logger luxlog.Logger, verifier zcap.Verifier) *Server {
 	return &Server{
-		app:        app,
-		logger:     logger,
-		defaultOrg: defaultOrg,
-		verifier:   verifier,
-		promises:   make(map[uint32]*promiseSlot),
+		app:      app,
+		logger:   logger,
+		verifier: verifier,
+		promises: make(map[uint32]*promiseSlot),
 	}
 }
 
@@ -180,110 +239,220 @@ func (s *Server) Register(node *zaplib.Node) {
 	node.Handle(MsgTypeRouterBase, s.handle)
 }
 
-// handle is the ZAP dispatch entrypoint: decode envelope → authorize → route.
+// handle is the ZAP dispatch entrypoint: decode envelope → authorize → scope →
+// route. The two gates are deliberately separate questions: authorize answers
+// "may this caller invoke this method at all" (capability + permission bit);
+// scope answers "whose rows may it touch" (the project). Braiding them is how a
+// service ends up with a valid capability reading another tenant's data.
 func (s *Server) handle(ctx context.Context, from string, msg *zaplib.Message) (*zaplib.Message, error) {
+	_ = ctx
 	req := parseRequest(msg)
 
-	_, status, errMsg := s.authorize(req)
-	if status != StatusOK {
+	if status, errMsg := s.authorize(req); status != StatusOK {
 		s.logger.Debug("obs: auth rejected", "from", from, "method", req.Method, "status", status, "err", errMsg)
 		return buildResponse(status, req.PromiseID, errorBody(errMsg))
 	}
 
-	// Resolve this call's promise (the authenticated org) so any dependent call
-	// WAITING on it can proceed. authorize() already awaited our own target if we
-	// had one, so the scope is fully resolved by here.
-	if req.PromiseID != NoTarget {
-		s.resolve(req.PromiseID, s.defaultOrg)
+	project, status, errMsg := s.scope(req)
+	if status != StatusOK {
+		return buildResponse(status, req.PromiseID, errorBody(errMsg))
 	}
 
+	// Resolve this call's promise (its project scope) so any dependent call
+	// WAITING on it can proceed.
+	if req.PromiseID != NoTarget {
+		s.resolve(req.PromiseID, project)
+	}
+
+	return s.dispatch(req, project)
+}
+
+// scope resolves the project this call operates within — the ONE tenant
+// boundary. A pipelined call inherits its target's resolved project; otherwise
+// the project is read from the request payload, where every request struct
+// carries ProjectId as text @0 (pinned by TestEveryRequestStructCarriesProjectIdAtZero).
+//
+// Inheriting rather than re-reading the payload on a pipelined call is the
+// point: a dependent call cannot name a different project than the call it
+// pipelines off, so pipelining can never be used to hop tenants.
+func (s *Server) scope(req Call) (project string, status uint32, errMsg string) {
+	if req.Target != NoTarget {
+		p, ok := s.await(req.Target)
+		if !ok {
+			return "", StatusBadRequest, fmt.Sprintf("pipelined target %d did not resolve in time", req.Target)
+		}
+		return p, StatusOK, ""
+	}
+	if len(req.Payload) == 0 {
+		return "", StatusBadRequest, "missing request payload"
+	}
+	p, err := zaplib.Parse(req.Payload)
+	if err != nil {
+		return "", StatusBadRequest, "malformed payload: " + err.Error()
+	}
+	project = p.Root().Text(0) // ProjectId is text @0 in every request struct
+	if project == "" {
+		return "", StatusBadRequest, "missing projectId"
+	}
+	return project, StatusOK, ""
+}
+
+// dispatch routes an authorized, project-scoped call to its handler. Adding a
+// method means one case here + one row in methodPermission — nowhere else.
+func (s *Server) dispatch(req Call, project string) (*zaplib.Message, error) {
 	switch req.Method {
 	// --- traces (honest) ---
 	case MethodTraceById:
-		return s.handleTraceById(req)
+		return s.handleTraceById(req, project)
 	case MethodTraceWithDetail:
-		return s.handleTraceWithDetail(req)
+		return s.handleTraceWithDetail(req, project)
 	case MethodTraceBookmark:
-		return s.handleTraceBookmark(req)
+		return s.handleTraceBookmark(req, project)
 	case MethodTracePublish:
-		return s.handleTracePublish(req)
+		return s.handleTracePublish(req, project)
 	case MethodTraceUpdateTags:
-		return s.handleTraceUpdateTags(req)
+		return s.handleTraceUpdateTags(req, project)
 	case MethodTraceDeleteMany:
-		return s.handleTraceDeleteMany(req)
+		return s.handleTraceDeleteMany(req, project)
 	// --- observations (honest) ---
 	case MethodObservationById:
-		return s.handleObservationById(req)
+		return s.handleObservationById(req, project)
 	case MethodEventBatchIO:
-		return s.handleEventBatchIO(req)
+		return s.handleEventBatchIO(req, project)
 	// --- sessions (honest) ---
 	case MethodSessionHasAny:
-		return s.handleSessionHasAny(req)
+		return s.handleSessionHasAny(req, project)
 	case MethodSessionById:
-		return s.handleSessionById(req)
+		return s.handleSessionById(req, project)
 	case MethodSessionBookmark:
-		return s.handleSessionBookmark(req)
+		return s.handleSessionBookmark(req, project)
 	case MethodSessionPublish:
-		return s.handleSessionPublish(req)
+		return s.handleSessionPublish(req, project)
 	// --- scores (honest) ---
 	case MethodScoreById:
-		return s.handleScoreById(req)
+		return s.handleScoreById(req, project)
 	case MethodScoreHasAny:
-		return s.handleScoreHasAny(req)
+		return s.handleScoreHasAny(req, project)
 	case MethodScoreCreateAnnotation:
-		return s.handleScoreUpsertAnnotation(req, false)
+		return s.handleScoreUpsertAnnotation(req, project, false)
 	case MethodScoreUpdateAnnotation:
-		return s.handleScoreUpsertAnnotation(req, true)
+		return s.handleScoreUpsertAnnotation(req, project, true)
 	case MethodScoreDeleteAnnotation:
-		return s.handleScoreDeleteAnnotation(req)
+		return s.handleScoreDeleteAnnotation(req, project)
 	case MethodEventScoresForTrace:
-		return s.handleEventScoresForTrace(req)
+		return s.handleEventScoresForTrace(req, project)
 	// --- score configs (honest) ---
 	case MethodScoreConfigAll:
-		return s.handleScoreConfigAll(req)
+		return s.handleScoreConfigAll(req, project)
 	case MethodScoreConfigById:
-		return s.handleScoreConfigById(req)
+		return s.handleScoreConfigById(req, project)
 	case MethodScoreConfigCreate:
-		return s.handleScoreConfigUpsert(req, false)
+		return s.handleScoreConfigUpsert(req, project, false)
 	case MethodScoreConfigUpdate:
-		return s.handleScoreConfigUpsert(req, true)
+		return s.handleScoreConfigUpsert(req, project, true)
 	// --- analytics (STUBBED with TODO) ---
 	case MethodTraceAll, MethodTraceCountAll, MethodTraceMetrics, MethodTraceFilterOptions,
 		MethodSessionAll, MethodSessionCountAll,
 		MethodScoreAll, MethodScoreCountAll,
 		MethodEventAll, MethodAnalyticsScoreComparison:
-		return s.handleStub(req)
+		return s.handleStub(req, project)
+
+	// --- dashboards (honest) ---
+	case MethodAllDashboards:
+		return s.handleAllDashboards(req, project)
+	case MethodGetDashboard:
+		return s.handleGetDashboard(req, project)
+	case MethodCreateDashboard:
+		return s.handleCreateDashboard(req, project)
+	case MethodUpdateDashboardMeta:
+		return s.handleUpdateDashboardMeta(req, project)
+	case MethodUpdateDashboardDef:
+		return s.handleUpdateDashboardDef(req, project)
+	case MethodUpdateDashboardFilters:
+		return s.handleUpdateDashboardFilters(req, project)
+	case MethodCloneDashboard:
+		return s.handleCloneDashboard(req, project)
+	case MethodDeleteDashboard:
+		return s.handleDeleteDashboard(req, project)
+	// --- widgets (honest) ---
+	case MethodAllWidgets:
+		return s.handleAllWidgets(req, project)
+	case MethodGetWidget:
+		return s.handleGetWidget(req, project)
+	case MethodCreateWidget:
+		return s.handleUpsertWidget(req, project, false)
+	case MethodUpdateWidget:
+		return s.handleUpsertWidget(req, project, true)
+	case MethodCopyWidgetToProject:
+		return s.handleCopyWidget(req, project)
+	case MethodDeleteWidget:
+		return s.handleDeleteWidget(req, project)
+	// --- table view presets (honest) ---
+	case MethodGetPresetsByTableName:
+		return s.handleGetPresetsByTableName(req, project)
+	case MethodGetPresetById:
+		return s.handleGetPresetById(req, project)
+	case MethodCreatePreset:
+		return s.handleUpsertPreset(req, project, false)
+	case MethodUpdatePreset:
+		return s.handleUpsertPreset(req, project, true)
+	case MethodUpdatePresetName:
+		return s.handleUpdatePresetName(req, project)
+	case MethodDeletePreset:
+		return s.handleDeletePreset(req, project)
+	case MethodGeneratePermalink:
+		return s.handleGeneratePermalink(req, project)
+	// --- monitors (honest) ---
+	case MethodAllMonitors:
+		return s.handleAllMonitors(req, project)
+	case MethodGetMonitor:
+		return s.handleGetMonitor(req, project)
+	case MethodCreateMonitor:
+		return s.handleUpsertMonitor(req, project, false)
+	case MethodUpdateMonitor:
+		return s.handleUpsertMonitor(req, project, true)
+	case MethodDeleteMonitor:
+		return s.handleDeleteMonitor(req, project)
+	// --- table batch-action (BullMQ queue — STUBBED) ---
+	case MethodIsBatchActionInProgress:
+		return s.handleIsBatchActionInProgress(req, project)
+	// --- dashboard analytics (ClickHouse — STUBBED, same shim as above) ---
+	case MethodChart, MethodScoreHistogram, MethodExecuteQuery:
+		return s.handleAnalytics(req, project)
+
 	default:
 		return buildResponse(StatusBadRequest, req.PromiseID, errorBody(fmt.Sprintf("unknown method %d", req.Method)))
 	}
 }
 
-// authorize resolves the call's effective org and enforces the per-method
-// capability bit. Returns (org, StatusOK, "") on success.
+// authorize enforces the capability: it must be a CapKindIAMSession cap
+// carrying the one permission bit the requested method requires. Returns
+// StatusOK on success. It answers ONLY "may this caller invoke this method" —
+// which tenant's rows the call may touch is scope()'s question, resolved
+// separately.
 //
-// Pipelining: if the call Targets an earlier promise, its org is inherited from
-// that promise's resolved answer. The capability is STILL verified on every call
-// — pipelining elides round trips, never authorization.
-func (s *Server) authorize(req Call) (org string, status uint32, errMsg string) {
+// The capability is verified on EVERY call. Pipelining elides round trips,
+// never authorization.
+func (s *Server) authorize(req Call) (status uint32, errMsg string) {
 	need, known := methodPermission[req.Method]
 	if !known {
-		return "", StatusBadRequest, fmt.Sprintf("unknown method %d", req.Method)
+		return StatusBadRequest, fmt.Sprintf("unknown method %d", req.Method)
 	}
 
 	c, err := zcap.Wrap(req.Cap)
 	if err != nil {
-		return "", StatusBadRequest, "malformed capability: " + err.Error()
+		return StatusBadRequest, "malformed capability: " + err.Error()
 	}
 
 	// Kind gate: these methods are defined on a CapKindIAMSession cap.
 	if c.Kind() != uint32(zcap.KindIAMSession) {
-		return "", StatusForbidden, "capability is not a CapKindIAMSession"
+		return StatusForbidden, "capability is not a CapKindIAMSession"
 	}
 
 	// Permission gate — the single chokepoint. Fail closed: a cap lacking the
 	// method's bit is rejected before any data is touched.
 	if c.Permissions()&need == 0 {
-		return "", StatusForbidden, fmt.Sprintf("capability lacks permission bit %#x for method %d", need, req.Method)
+		return StatusForbidden, fmt.Sprintf("capability lacks permission bit %#x for method %d", need, req.Method)
 	}
 
 	// Cryptographic verification. The full chain check (signature, expiry,
@@ -296,23 +465,10 @@ func (s *Server) authorize(req Call) (org string, status uint32, errMsg string) 
 	// verifier.VerifyChain once the IAM pubkey registry is wired here.
 	if s.verifier.IssuerKey != nil {
 		if err := s.verifier.Verify(c, time.Now().Unix()); err != nil {
-			return "", StatusUnauthorized, "capability verify failed: " + err.Error()
+			return StatusUnauthorized, "capability verify failed: " + err.Error()
 		}
 	}
-
-	// Effective org: inherited from a targeted promise, else the service default.
-	// (Holder→org is an IAM lookup; until wired, scope to the default org.) The
-	// luxfi/zap transport is per-connection FIFO and the client ships the target
-	// call before the dependent one, so await returns immediately in practice;
-	// the timeout is a safety net against an out-of-order client.
-	if req.Target != NoTarget {
-		o, ok := s.await(req.Target)
-		if !ok {
-			return "", StatusBadRequest, fmt.Sprintf("pipelined target %d did not resolve in time", req.Target)
-		}
-		return o, StatusOK, ""
-	}
-	return s.defaultOrg, StatusOK, ""
+	return StatusOK, ""
 }
 
 // notFound reports whether err is the no-such-row sentinel from a project-scoped

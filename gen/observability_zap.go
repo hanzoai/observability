@@ -1820,3 +1820,1375 @@ func NewEmpty(in EmptyInput) []byte {
 	ob.FinishAsRoot()
 	return b.Finish()
 }
+
+const (
+	idReqProjectIdOff = 0
+	idReqIdOff        = 8
+	idReqSize         = 16
+)
+
+// IdReq is a zero-copy view into a ZAP-encoded IdReq message.
+type IdReq struct{ o zap.Object }
+
+// WrapIdReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapIdReq(b []byte) (IdReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return IdReq{}, err
+	}
+	return IdReq{o: m.Root()}, nil
+}
+
+func (t IdReq) ProjectId() string { return t.o.Text(idReqProjectIdOff) }
+func (t IdReq) Id() string        { return t.o.Text(idReqIdOff) }
+
+// IdReqInput collects the field values for NewIdReq.
+type IdReqInput struct {
+	ProjectId string
+	Id        string
+}
+
+// NewIdReq builds a ZAP-encoded IdReq message from in and returns the bytes.
+func NewIdReq(in IdReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(idReqSize)
+	ob.SetText(idReqProjectIdOff, in.ProjectId)
+	ob.SetText(idReqIdOff, in.Id)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	listReqProjectIdOff     = 0
+	listReqPageOff          = 8
+	listReqLimitOff         = 12
+	listReqOrderByColumnOff = 16
+	listReqOrderByOrderOff  = 24
+	listReqSize             = 32
+)
+
+// ListReq is a zero-copy view into a ZAP-encoded ListReq message.
+type ListReq struct{ o zap.Object }
+
+// WrapListReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapListReq(b []byte) (ListReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return ListReq{}, err
+	}
+	return ListReq{o: m.Root()}, nil
+}
+
+func (t ListReq) ProjectId() string     { return t.o.Text(listReqProjectIdOff) }
+func (t ListReq) Page() uint32          { return t.o.Uint32(listReqPageOff) }
+func (t ListReq) Limit() uint32         { return t.o.Uint32(listReqLimitOff) }
+func (t ListReq) OrderByColumn() string { return t.o.Text(listReqOrderByColumnOff) }
+func (t ListReq) OrderByOrder() string  { return t.o.Text(listReqOrderByOrderOff) }
+
+// ListReqInput collects the field values for NewListReq.
+type ListReqInput struct {
+	ProjectId     string
+	Page          uint32
+	Limit         uint32
+	OrderByColumn string
+	OrderByOrder  string
+}
+
+// NewListReq builds a ZAP-encoded ListReq message from in and returns the bytes.
+func NewListReq(in ListReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(listReqSize)
+	ob.SetText(listReqProjectIdOff, in.ProjectId)
+	ob.SetUint32(listReqPageOff, in.Page)
+	ob.SetUint32(listReqLimitOff, in.Limit)
+	ob.SetText(listReqOrderByColumnOff, in.OrderByColumn)
+	ob.SetText(listReqOrderByOrderOff, in.OrderByOrder)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	dashboardIdOff          = 0
+	dashboardProjectIdOff   = 8
+	dashboardNameOff        = 16
+	dashboardDescriptionOff = 24
+	dashboardOwnerOff       = 32
+	dashboardDefinitionOff  = 40
+	dashboardFiltersOff     = 48
+	dashboardCreatedByOff   = 56
+	dashboardCreatedAtOff   = 64
+	dashboardUpdatedAtOff   = 72
+	dashboardSize           = 80
+)
+
+// Dashboard is a zero-copy view into a ZAP-encoded Dashboard message.
+type Dashboard struct{ o zap.Object }
+
+// WrapDashboard parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapDashboard(b []byte) (Dashboard, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return Dashboard{}, err
+	}
+	return Dashboard{o: m.Root()}, nil
+}
+
+func (t Dashboard) Id() string          { return t.o.Text(dashboardIdOff) }
+func (t Dashboard) ProjectId() string   { return t.o.Text(dashboardProjectIdOff) }
+func (t Dashboard) Name() string        { return t.o.Text(dashboardNameOff) }
+func (t Dashboard) Description() string { return t.o.Text(dashboardDescriptionOff) }
+func (t Dashboard) Owner() string       { return t.o.Text(dashboardOwnerOff) }
+func (t Dashboard) Definition() string  { return t.o.Text(dashboardDefinitionOff) }
+func (t Dashboard) Filters() string     { return t.o.Text(dashboardFiltersOff) }
+func (t Dashboard) CreatedBy() string   { return t.o.Text(dashboardCreatedByOff) }
+func (t Dashboard) CreatedAt() string   { return t.o.Text(dashboardCreatedAtOff) }
+func (t Dashboard) UpdatedAt() string   { return t.o.Text(dashboardUpdatedAtOff) }
+
+// DashboardInput collects the field values for NewDashboard.
+type DashboardInput struct {
+	Id          string
+	ProjectId   string
+	Name        string
+	Description string
+	Owner       string
+	Definition  string
+	Filters     string
+	CreatedBy   string
+	CreatedAt   string
+	UpdatedAt   string
+}
+
+// NewDashboard builds a ZAP-encoded Dashboard message from in and returns the bytes.
+func NewDashboard(in DashboardInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(dashboardSize)
+	ob.SetText(dashboardIdOff, in.Id)
+	ob.SetText(dashboardProjectIdOff, in.ProjectId)
+	ob.SetText(dashboardNameOff, in.Name)
+	ob.SetText(dashboardDescriptionOff, in.Description)
+	ob.SetText(dashboardOwnerOff, in.Owner)
+	ob.SetText(dashboardDefinitionOff, in.Definition)
+	ob.SetText(dashboardFiltersOff, in.Filters)
+	ob.SetText(dashboardCreatedByOff, in.CreatedBy)
+	ob.SetText(dashboardCreatedAtOff, in.CreatedAt)
+	ob.SetText(dashboardUpdatedAtOff, in.UpdatedAt)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	dashboardListDashboardsOff = 0
+	dashboardListTotalCountOff = 8
+	dashboardListSize          = 12
+)
+
+// DashboardList is a zero-copy view into a ZAP-encoded DashboardList message.
+type DashboardList struct{ o zap.Object }
+
+// WrapDashboardList parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapDashboardList(b []byte) (DashboardList, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return DashboardList{}, err
+	}
+	return DashboardList{o: m.Root()}, nil
+}
+
+func (t DashboardList) Dashboards() zap.List { return t.o.List(dashboardListDashboardsOff) }
+func (t DashboardList) TotalCount() uint32   { return t.o.Uint32(dashboardListTotalCountOff) }
+
+// DashboardListInput collects the field values for NewDashboardList.
+type DashboardListInput struct {
+	Dashboards [][]byte
+	TotalCount uint32
+}
+
+// NewDashboardList builds a ZAP-encoded DashboardList message from in and returns the bytes.
+func NewDashboardList(in DashboardListInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(dashboardListSize)
+	dashboardsLB := b.StartList(0)
+	for _, elem := range in.Dashboards {
+		dashboardsLB.AddObjectBytes(elem)
+	}
+	ob.SetList(dashboardListDashboardsOff, dashboardsLB.FinishOffset(), len(in.Dashboards))
+	ob.SetUint32(dashboardListTotalCountOff, in.TotalCount)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	createDashReqProjectIdOff   = 0
+	createDashReqNameOff        = 8
+	createDashReqDescriptionOff = 16
+	createDashReqSize           = 24
+)
+
+// CreateDashReq is a zero-copy view into a ZAP-encoded CreateDashReq message.
+type CreateDashReq struct{ o zap.Object }
+
+// WrapCreateDashReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapCreateDashReq(b []byte) (CreateDashReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return CreateDashReq{}, err
+	}
+	return CreateDashReq{o: m.Root()}, nil
+}
+
+func (t CreateDashReq) ProjectId() string   { return t.o.Text(createDashReqProjectIdOff) }
+func (t CreateDashReq) Name() string        { return t.o.Text(createDashReqNameOff) }
+func (t CreateDashReq) Description() string { return t.o.Text(createDashReqDescriptionOff) }
+
+// CreateDashReqInput collects the field values for NewCreateDashReq.
+type CreateDashReqInput struct {
+	ProjectId   string
+	Name        string
+	Description string
+}
+
+// NewCreateDashReq builds a ZAP-encoded CreateDashReq message from in and returns the bytes.
+func NewCreateDashReq(in CreateDashReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(createDashReqSize)
+	ob.SetText(createDashReqProjectIdOff, in.ProjectId)
+	ob.SetText(createDashReqNameOff, in.Name)
+	ob.SetText(createDashReqDescriptionOff, in.Description)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	updateDashReqProjectIdOff   = 0
+	updateDashReqDashboardIdOff = 8
+	updateDashReqNameOff        = 16
+	updateDashReqDescriptionOff = 24
+	updateDashReqSize           = 32
+)
+
+// UpdateDashReq is a zero-copy view into a ZAP-encoded UpdateDashReq message.
+type UpdateDashReq struct{ o zap.Object }
+
+// WrapUpdateDashReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapUpdateDashReq(b []byte) (UpdateDashReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return UpdateDashReq{}, err
+	}
+	return UpdateDashReq{o: m.Root()}, nil
+}
+
+func (t UpdateDashReq) ProjectId() string   { return t.o.Text(updateDashReqProjectIdOff) }
+func (t UpdateDashReq) DashboardId() string { return t.o.Text(updateDashReqDashboardIdOff) }
+func (t UpdateDashReq) Name() string        { return t.o.Text(updateDashReqNameOff) }
+func (t UpdateDashReq) Description() string { return t.o.Text(updateDashReqDescriptionOff) }
+
+// UpdateDashReqInput collects the field values for NewUpdateDashReq.
+type UpdateDashReqInput struct {
+	ProjectId   string
+	DashboardId string
+	Name        string
+	Description string
+}
+
+// NewUpdateDashReq builds a ZAP-encoded UpdateDashReq message from in and returns the bytes.
+func NewUpdateDashReq(in UpdateDashReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(updateDashReqSize)
+	ob.SetText(updateDashReqProjectIdOff, in.ProjectId)
+	ob.SetText(updateDashReqDashboardIdOff, in.DashboardId)
+	ob.SetText(updateDashReqNameOff, in.Name)
+	ob.SetText(updateDashReqDescriptionOff, in.Description)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	dashDefReqProjectIdOff   = 0
+	dashDefReqDashboardIdOff = 8
+	dashDefReqDefinitionOff  = 16
+	dashDefReqSize           = 24
+)
+
+// DashDefReq is a zero-copy view into a ZAP-encoded DashDefReq message.
+type DashDefReq struct{ o zap.Object }
+
+// WrapDashDefReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapDashDefReq(b []byte) (DashDefReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return DashDefReq{}, err
+	}
+	return DashDefReq{o: m.Root()}, nil
+}
+
+func (t DashDefReq) ProjectId() string   { return t.o.Text(dashDefReqProjectIdOff) }
+func (t DashDefReq) DashboardId() string { return t.o.Text(dashDefReqDashboardIdOff) }
+func (t DashDefReq) Definition() string  { return t.o.Text(dashDefReqDefinitionOff) }
+
+// DashDefReqInput collects the field values for NewDashDefReq.
+type DashDefReqInput struct {
+	ProjectId   string
+	DashboardId string
+	Definition  string
+}
+
+// NewDashDefReq builds a ZAP-encoded DashDefReq message from in and returns the bytes.
+func NewDashDefReq(in DashDefReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(dashDefReqSize)
+	ob.SetText(dashDefReqProjectIdOff, in.ProjectId)
+	ob.SetText(dashDefReqDashboardIdOff, in.DashboardId)
+	ob.SetText(dashDefReqDefinitionOff, in.Definition)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	dashFiltersReqProjectIdOff   = 0
+	dashFiltersReqDashboardIdOff = 8
+	dashFiltersReqFiltersOff     = 16
+	dashFiltersReqSize           = 24
+)
+
+// DashFiltersReq is a zero-copy view into a ZAP-encoded DashFiltersReq message.
+type DashFiltersReq struct{ o zap.Object }
+
+// WrapDashFiltersReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapDashFiltersReq(b []byte) (DashFiltersReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return DashFiltersReq{}, err
+	}
+	return DashFiltersReq{o: m.Root()}, nil
+}
+
+func (t DashFiltersReq) ProjectId() string   { return t.o.Text(dashFiltersReqProjectIdOff) }
+func (t DashFiltersReq) DashboardId() string { return t.o.Text(dashFiltersReqDashboardIdOff) }
+func (t DashFiltersReq) Filters() string     { return t.o.Text(dashFiltersReqFiltersOff) }
+
+// DashFiltersReqInput collects the field values for NewDashFiltersReq.
+type DashFiltersReqInput struct {
+	ProjectId   string
+	DashboardId string
+	Filters     string
+}
+
+// NewDashFiltersReq builds a ZAP-encoded DashFiltersReq message from in and returns the bytes.
+func NewDashFiltersReq(in DashFiltersReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(dashFiltersReqSize)
+	ob.SetText(dashFiltersReqProjectIdOff, in.ProjectId)
+	ob.SetText(dashFiltersReqDashboardIdOff, in.DashboardId)
+	ob.SetText(dashFiltersReqFiltersOff, in.Filters)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	widgetIdOff          = 0
+	widgetProjectIdOff   = 8
+	widgetNameOff        = 16
+	widgetDescriptionOff = 24
+	widgetViewOff        = 32
+	widgetOwnerOff       = 40
+	widgetDimensionsOff  = 48
+	widgetMetricsOff     = 56
+	widgetFiltersOff     = 64
+	widgetChartTypeOff   = 72
+	widgetChartConfigOff = 80
+	widgetCreatedAtOff   = 88
+	widgetUpdatedAtOff   = 96
+	widgetSize           = 104
+)
+
+// Widget is a zero-copy view into a ZAP-encoded Widget message.
+type Widget struct{ o zap.Object }
+
+// WrapWidget parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapWidget(b []byte) (Widget, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return Widget{}, err
+	}
+	return Widget{o: m.Root()}, nil
+}
+
+func (t Widget) Id() string          { return t.o.Text(widgetIdOff) }
+func (t Widget) ProjectId() string   { return t.o.Text(widgetProjectIdOff) }
+func (t Widget) Name() string        { return t.o.Text(widgetNameOff) }
+func (t Widget) Description() string { return t.o.Text(widgetDescriptionOff) }
+func (t Widget) View() string        { return t.o.Text(widgetViewOff) }
+func (t Widget) Owner() string       { return t.o.Text(widgetOwnerOff) }
+func (t Widget) Dimensions() string  { return t.o.Text(widgetDimensionsOff) }
+func (t Widget) Metrics() string     { return t.o.Text(widgetMetricsOff) }
+func (t Widget) Filters() string     { return t.o.Text(widgetFiltersOff) }
+func (t Widget) ChartType() string   { return t.o.Text(widgetChartTypeOff) }
+func (t Widget) ChartConfig() string { return t.o.Text(widgetChartConfigOff) }
+func (t Widget) CreatedAt() string   { return t.o.Text(widgetCreatedAtOff) }
+func (t Widget) UpdatedAt() string   { return t.o.Text(widgetUpdatedAtOff) }
+
+// WidgetInput collects the field values for NewWidget.
+type WidgetInput struct {
+	Id          string
+	ProjectId   string
+	Name        string
+	Description string
+	View        string
+	Owner       string
+	Dimensions  string
+	Metrics     string
+	Filters     string
+	ChartType   string
+	ChartConfig string
+	CreatedAt   string
+	UpdatedAt   string
+}
+
+// NewWidget builds a ZAP-encoded Widget message from in and returns the bytes.
+func NewWidget(in WidgetInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(widgetSize)
+	ob.SetText(widgetIdOff, in.Id)
+	ob.SetText(widgetProjectIdOff, in.ProjectId)
+	ob.SetText(widgetNameOff, in.Name)
+	ob.SetText(widgetDescriptionOff, in.Description)
+	ob.SetText(widgetViewOff, in.View)
+	ob.SetText(widgetOwnerOff, in.Owner)
+	ob.SetText(widgetDimensionsOff, in.Dimensions)
+	ob.SetText(widgetMetricsOff, in.Metrics)
+	ob.SetText(widgetFiltersOff, in.Filters)
+	ob.SetText(widgetChartTypeOff, in.ChartType)
+	ob.SetText(widgetChartConfigOff, in.ChartConfig)
+	ob.SetText(widgetCreatedAtOff, in.CreatedAt)
+	ob.SetText(widgetUpdatedAtOff, in.UpdatedAt)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	widgetListWidgetsOff    = 0
+	widgetListTotalCountOff = 8
+	widgetListSize          = 12
+)
+
+// WidgetList is a zero-copy view into a ZAP-encoded WidgetList message.
+type WidgetList struct{ o zap.Object }
+
+// WrapWidgetList parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapWidgetList(b []byte) (WidgetList, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return WidgetList{}, err
+	}
+	return WidgetList{o: m.Root()}, nil
+}
+
+func (t WidgetList) Widgets() zap.List  { return t.o.List(widgetListWidgetsOff) }
+func (t WidgetList) TotalCount() uint32 { return t.o.Uint32(widgetListTotalCountOff) }
+
+// WidgetListInput collects the field values for NewWidgetList.
+type WidgetListInput struct {
+	Widgets    [][]byte
+	TotalCount uint32
+}
+
+// NewWidgetList builds a ZAP-encoded WidgetList message from in and returns the bytes.
+func NewWidgetList(in WidgetListInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(widgetListSize)
+	widgetsLB := b.StartList(0)
+	for _, elem := range in.Widgets {
+		widgetsLB.AddObjectBytes(elem)
+	}
+	ob.SetList(widgetListWidgetsOff, widgetsLB.FinishOffset(), len(in.Widgets))
+	ob.SetUint32(widgetListTotalCountOff, in.TotalCount)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	widgetReqProjectIdOff   = 0
+	widgetReqWidgetIdOff    = 8
+	widgetReqNameOff        = 16
+	widgetReqDescriptionOff = 24
+	widgetReqViewOff        = 32
+	widgetReqDimensionsOff  = 40
+	widgetReqMetricsOff     = 48
+	widgetReqFiltersOff     = 56
+	widgetReqChartTypeOff   = 64
+	widgetReqChartConfigOff = 72
+	widgetReqSize           = 80
+)
+
+// WidgetReq is a zero-copy view into a ZAP-encoded WidgetReq message.
+type WidgetReq struct{ o zap.Object }
+
+// WrapWidgetReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapWidgetReq(b []byte) (WidgetReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return WidgetReq{}, err
+	}
+	return WidgetReq{o: m.Root()}, nil
+}
+
+func (t WidgetReq) ProjectId() string   { return t.o.Text(widgetReqProjectIdOff) }
+func (t WidgetReq) WidgetId() string    { return t.o.Text(widgetReqWidgetIdOff) }
+func (t WidgetReq) Name() string        { return t.o.Text(widgetReqNameOff) }
+func (t WidgetReq) Description() string { return t.o.Text(widgetReqDescriptionOff) }
+func (t WidgetReq) View() string        { return t.o.Text(widgetReqViewOff) }
+func (t WidgetReq) Dimensions() string  { return t.o.Text(widgetReqDimensionsOff) }
+func (t WidgetReq) Metrics() string     { return t.o.Text(widgetReqMetricsOff) }
+func (t WidgetReq) Filters() string     { return t.o.Text(widgetReqFiltersOff) }
+func (t WidgetReq) ChartType() string   { return t.o.Text(widgetReqChartTypeOff) }
+func (t WidgetReq) ChartConfig() string { return t.o.Text(widgetReqChartConfigOff) }
+
+// WidgetReqInput collects the field values for NewWidgetReq.
+type WidgetReqInput struct {
+	ProjectId   string
+	WidgetId    string
+	Name        string
+	Description string
+	View        string
+	Dimensions  string
+	Metrics     string
+	Filters     string
+	ChartType   string
+	ChartConfig string
+}
+
+// NewWidgetReq builds a ZAP-encoded WidgetReq message from in and returns the bytes.
+func NewWidgetReq(in WidgetReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(widgetReqSize)
+	ob.SetText(widgetReqProjectIdOff, in.ProjectId)
+	ob.SetText(widgetReqWidgetIdOff, in.WidgetId)
+	ob.SetText(widgetReqNameOff, in.Name)
+	ob.SetText(widgetReqDescriptionOff, in.Description)
+	ob.SetText(widgetReqViewOff, in.View)
+	ob.SetText(widgetReqDimensionsOff, in.Dimensions)
+	ob.SetText(widgetReqMetricsOff, in.Metrics)
+	ob.SetText(widgetReqFiltersOff, in.Filters)
+	ob.SetText(widgetReqChartTypeOff, in.ChartType)
+	ob.SetText(widgetReqChartConfigOff, in.ChartConfig)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	copyWidgetReqProjectIdOff   = 0
+	copyWidgetReqWidgetIdOff    = 8
+	copyWidgetReqDashboardIdOff = 16
+	copyWidgetReqPlacementIdOff = 24
+	copyWidgetReqSize           = 32
+)
+
+// CopyWidgetReq is a zero-copy view into a ZAP-encoded CopyWidgetReq message.
+type CopyWidgetReq struct{ o zap.Object }
+
+// WrapCopyWidgetReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapCopyWidgetReq(b []byte) (CopyWidgetReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return CopyWidgetReq{}, err
+	}
+	return CopyWidgetReq{o: m.Root()}, nil
+}
+
+func (t CopyWidgetReq) ProjectId() string   { return t.o.Text(copyWidgetReqProjectIdOff) }
+func (t CopyWidgetReq) WidgetId() string    { return t.o.Text(copyWidgetReqWidgetIdOff) }
+func (t CopyWidgetReq) DashboardId() string { return t.o.Text(copyWidgetReqDashboardIdOff) }
+func (t CopyWidgetReq) PlacementId() string { return t.o.Text(copyWidgetReqPlacementIdOff) }
+
+// CopyWidgetReqInput collects the field values for NewCopyWidgetReq.
+type CopyWidgetReqInput struct {
+	ProjectId   string
+	WidgetId    string
+	DashboardId string
+	PlacementId string
+}
+
+// NewCopyWidgetReq builds a ZAP-encoded CopyWidgetReq message from in and returns the bytes.
+func NewCopyWidgetReq(in CopyWidgetReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(copyWidgetReqSize)
+	ob.SetText(copyWidgetReqProjectIdOff, in.ProjectId)
+	ob.SetText(copyWidgetReqWidgetIdOff, in.WidgetId)
+	ob.SetText(copyWidgetReqDashboardIdOff, in.DashboardId)
+	ob.SetText(copyWidgetReqPlacementIdOff, in.PlacementId)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	batchActionReqProjectIdOff = 0
+	batchActionReqTableNameOff = 8
+	batchActionReqActionIdOff  = 16
+	batchActionReqSize         = 24
+)
+
+// BatchActionReq is a zero-copy view into a ZAP-encoded BatchActionReq message.
+type BatchActionReq struct{ o zap.Object }
+
+// WrapBatchActionReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapBatchActionReq(b []byte) (BatchActionReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return BatchActionReq{}, err
+	}
+	return BatchActionReq{o: m.Root()}, nil
+}
+
+func (t BatchActionReq) ProjectId() string { return t.o.Text(batchActionReqProjectIdOff) }
+func (t BatchActionReq) TableName() string { return t.o.Text(batchActionReqTableNameOff) }
+func (t BatchActionReq) ActionId() string  { return t.o.Text(batchActionReqActionIdOff) }
+
+// BatchActionReqInput collects the field values for NewBatchActionReq.
+type BatchActionReqInput struct {
+	ProjectId string
+	TableName string
+	ActionId  string
+}
+
+// NewBatchActionReq builds a ZAP-encoded BatchActionReq message from in and returns the bytes.
+func NewBatchActionReq(in BatchActionReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(batchActionReqSize)
+	ob.SetText(batchActionReqProjectIdOff, in.ProjectId)
+	ob.SetText(batchActionReqTableNameOff, in.TableName)
+	ob.SetText(batchActionReqActionIdOff, in.ActionId)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	presetIdOff               = 0
+	presetProjectIdOff        = 8
+	presetNameOff             = 16
+	presetTableNameOff        = 24
+	presetFiltersOff          = 32
+	presetColumnOrderOff      = 40
+	presetColumnVisibilityOff = 48
+	presetSearchQueryOff      = 56
+	presetOrderByColumnOff    = 64
+	presetOrderByOrderOff     = 72
+	presetCreatedByOff        = 80
+	presetCreatedAtOff        = 88
+	presetUpdatedAtOff        = 96
+	presetSize                = 104
+)
+
+// Preset is a zero-copy view into a ZAP-encoded Preset message.
+type Preset struct{ o zap.Object }
+
+// WrapPreset parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapPreset(b []byte) (Preset, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return Preset{}, err
+	}
+	return Preset{o: m.Root()}, nil
+}
+
+func (t Preset) Id() string               { return t.o.Text(presetIdOff) }
+func (t Preset) ProjectId() string        { return t.o.Text(presetProjectIdOff) }
+func (t Preset) Name() string             { return t.o.Text(presetNameOff) }
+func (t Preset) TableName() string        { return t.o.Text(presetTableNameOff) }
+func (t Preset) Filters() string          { return t.o.Text(presetFiltersOff) }
+func (t Preset) ColumnOrder() string      { return t.o.Text(presetColumnOrderOff) }
+func (t Preset) ColumnVisibility() string { return t.o.Text(presetColumnVisibilityOff) }
+func (t Preset) SearchQuery() string      { return t.o.Text(presetSearchQueryOff) }
+func (t Preset) OrderByColumn() string    { return t.o.Text(presetOrderByColumnOff) }
+func (t Preset) OrderByOrder() string     { return t.o.Text(presetOrderByOrderOff) }
+func (t Preset) CreatedBy() string        { return t.o.Text(presetCreatedByOff) }
+func (t Preset) CreatedAt() string        { return t.o.Text(presetCreatedAtOff) }
+func (t Preset) UpdatedAt() string        { return t.o.Text(presetUpdatedAtOff) }
+
+// PresetInput collects the field values for NewPreset.
+type PresetInput struct {
+	Id               string
+	ProjectId        string
+	Name             string
+	TableName        string
+	Filters          string
+	ColumnOrder      string
+	ColumnVisibility string
+	SearchQuery      string
+	OrderByColumn    string
+	OrderByOrder     string
+	CreatedBy        string
+	CreatedAt        string
+	UpdatedAt        string
+}
+
+// NewPreset builds a ZAP-encoded Preset message from in and returns the bytes.
+func NewPreset(in PresetInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(presetSize)
+	ob.SetText(presetIdOff, in.Id)
+	ob.SetText(presetProjectIdOff, in.ProjectId)
+	ob.SetText(presetNameOff, in.Name)
+	ob.SetText(presetTableNameOff, in.TableName)
+	ob.SetText(presetFiltersOff, in.Filters)
+	ob.SetText(presetColumnOrderOff, in.ColumnOrder)
+	ob.SetText(presetColumnVisibilityOff, in.ColumnVisibility)
+	ob.SetText(presetSearchQueryOff, in.SearchQuery)
+	ob.SetText(presetOrderByColumnOff, in.OrderByColumn)
+	ob.SetText(presetOrderByOrderOff, in.OrderByOrder)
+	ob.SetText(presetCreatedByOff, in.CreatedBy)
+	ob.SetText(presetCreatedAtOff, in.CreatedAt)
+	ob.SetText(presetUpdatedAtOff, in.UpdatedAt)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	presetListPresetsOff = 0
+	presetListSize       = 8
+)
+
+// PresetList is a zero-copy view into a ZAP-encoded PresetList message.
+type PresetList struct{ o zap.Object }
+
+// WrapPresetList parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapPresetList(b []byte) (PresetList, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return PresetList{}, err
+	}
+	return PresetList{o: m.Root()}, nil
+}
+
+func (t PresetList) Presets() zap.List { return t.o.List(presetListPresetsOff) }
+
+// PresetListInput collects the field values for NewPresetList.
+type PresetListInput struct {
+	Presets [][]byte
+}
+
+// NewPresetList builds a ZAP-encoded PresetList message from in and returns the bytes.
+func NewPresetList(in PresetListInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(presetListSize)
+	presetsLB := b.StartList(0)
+	for _, elem := range in.Presets {
+		presetsLB.AddObjectBytes(elem)
+	}
+	ob.SetList(presetListPresetsOff, presetsLB.FinishOffset(), len(in.Presets))
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	presetListReqProjectIdOff = 0
+	presetListReqTableNameOff = 8
+	presetListReqSize         = 16
+)
+
+// PresetListReq is a zero-copy view into a ZAP-encoded PresetListReq message.
+type PresetListReq struct{ o zap.Object }
+
+// WrapPresetListReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapPresetListReq(b []byte) (PresetListReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return PresetListReq{}, err
+	}
+	return PresetListReq{o: m.Root()}, nil
+}
+
+func (t PresetListReq) ProjectId() string { return t.o.Text(presetListReqProjectIdOff) }
+func (t PresetListReq) TableName() string { return t.o.Text(presetListReqTableNameOff) }
+
+// PresetListReqInput collects the field values for NewPresetListReq.
+type PresetListReqInput struct {
+	ProjectId string
+	TableName string
+}
+
+// NewPresetListReq builds a ZAP-encoded PresetListReq message from in and returns the bytes.
+func NewPresetListReq(in PresetListReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(presetListReqSize)
+	ob.SetText(presetListReqProjectIdOff, in.ProjectId)
+	ob.SetText(presetListReqTableNameOff, in.TableName)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	presetReqProjectIdOff        = 0
+	presetReqPresetIdOff         = 8
+	presetReqNameOff             = 16
+	presetReqTableNameOff        = 24
+	presetReqFiltersOff          = 32
+	presetReqColumnOrderOff      = 40
+	presetReqColumnVisibilityOff = 48
+	presetReqSearchQueryOff      = 56
+	presetReqOrderByColumnOff    = 64
+	presetReqOrderByOrderOff     = 72
+	presetReqSize                = 80
+)
+
+// PresetReq is a zero-copy view into a ZAP-encoded PresetReq message.
+type PresetReq struct{ o zap.Object }
+
+// WrapPresetReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapPresetReq(b []byte) (PresetReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return PresetReq{}, err
+	}
+	return PresetReq{o: m.Root()}, nil
+}
+
+func (t PresetReq) ProjectId() string        { return t.o.Text(presetReqProjectIdOff) }
+func (t PresetReq) PresetId() string         { return t.o.Text(presetReqPresetIdOff) }
+func (t PresetReq) Name() string             { return t.o.Text(presetReqNameOff) }
+func (t PresetReq) TableName() string        { return t.o.Text(presetReqTableNameOff) }
+func (t PresetReq) Filters() string          { return t.o.Text(presetReqFiltersOff) }
+func (t PresetReq) ColumnOrder() string      { return t.o.Text(presetReqColumnOrderOff) }
+func (t PresetReq) ColumnVisibility() string { return t.o.Text(presetReqColumnVisibilityOff) }
+func (t PresetReq) SearchQuery() string      { return t.o.Text(presetReqSearchQueryOff) }
+func (t PresetReq) OrderByColumn() string    { return t.o.Text(presetReqOrderByColumnOff) }
+func (t PresetReq) OrderByOrder() string     { return t.o.Text(presetReqOrderByOrderOff) }
+
+// PresetReqInput collects the field values for NewPresetReq.
+type PresetReqInput struct {
+	ProjectId        string
+	PresetId         string
+	Name             string
+	TableName        string
+	Filters          string
+	ColumnOrder      string
+	ColumnVisibility string
+	SearchQuery      string
+	OrderByColumn    string
+	OrderByOrder     string
+}
+
+// NewPresetReq builds a ZAP-encoded PresetReq message from in and returns the bytes.
+func NewPresetReq(in PresetReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(presetReqSize)
+	ob.SetText(presetReqProjectIdOff, in.ProjectId)
+	ob.SetText(presetReqPresetIdOff, in.PresetId)
+	ob.SetText(presetReqNameOff, in.Name)
+	ob.SetText(presetReqTableNameOff, in.TableName)
+	ob.SetText(presetReqFiltersOff, in.Filters)
+	ob.SetText(presetReqColumnOrderOff, in.ColumnOrder)
+	ob.SetText(presetReqColumnVisibilityOff, in.ColumnVisibility)
+	ob.SetText(presetReqSearchQueryOff, in.SearchQuery)
+	ob.SetText(presetReqOrderByColumnOff, in.OrderByColumn)
+	ob.SetText(presetReqOrderByOrderOff, in.OrderByOrder)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	presetNameReqProjectIdOff = 0
+	presetNameReqPresetIdOff  = 8
+	presetNameReqNameOff      = 16
+	presetNameReqTableNameOff = 24
+	presetNameReqSize         = 32
+)
+
+// PresetNameReq is a zero-copy view into a ZAP-encoded PresetNameReq message.
+type PresetNameReq struct{ o zap.Object }
+
+// WrapPresetNameReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapPresetNameReq(b []byte) (PresetNameReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return PresetNameReq{}, err
+	}
+	return PresetNameReq{o: m.Root()}, nil
+}
+
+func (t PresetNameReq) ProjectId() string { return t.o.Text(presetNameReqProjectIdOff) }
+func (t PresetNameReq) PresetId() string  { return t.o.Text(presetNameReqPresetIdOff) }
+func (t PresetNameReq) Name() string      { return t.o.Text(presetNameReqNameOff) }
+func (t PresetNameReq) TableName() string { return t.o.Text(presetNameReqTableNameOff) }
+
+// PresetNameReqInput collects the field values for NewPresetNameReq.
+type PresetNameReqInput struct {
+	ProjectId string
+	PresetId  string
+	Name      string
+	TableName string
+}
+
+// NewPresetNameReq builds a ZAP-encoded PresetNameReq message from in and returns the bytes.
+func NewPresetNameReq(in PresetNameReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(presetNameReqSize)
+	ob.SetText(presetNameReqProjectIdOff, in.ProjectId)
+	ob.SetText(presetNameReqPresetIdOff, in.PresetId)
+	ob.SetText(presetNameReqNameOff, in.Name)
+	ob.SetText(presetNameReqTableNameOff, in.TableName)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	permalinkReqProjectIdOff = 0
+	permalinkReqPresetIdOff  = 8
+	permalinkReqTableNameOff = 16
+	permalinkReqBaseUrlOff   = 24
+	permalinkReqSize         = 32
+)
+
+// PermalinkReq is a zero-copy view into a ZAP-encoded PermalinkReq message.
+type PermalinkReq struct{ o zap.Object }
+
+// WrapPermalinkReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapPermalinkReq(b []byte) (PermalinkReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return PermalinkReq{}, err
+	}
+	return PermalinkReq{o: m.Root()}, nil
+}
+
+func (t PermalinkReq) ProjectId() string { return t.o.Text(permalinkReqProjectIdOff) }
+func (t PermalinkReq) PresetId() string  { return t.o.Text(permalinkReqPresetIdOff) }
+func (t PermalinkReq) TableName() string { return t.o.Text(permalinkReqTableNameOff) }
+func (t PermalinkReq) BaseUrl() string   { return t.o.Text(permalinkReqBaseUrlOff) }
+
+// PermalinkReqInput collects the field values for NewPermalinkReq.
+type PermalinkReqInput struct {
+	ProjectId string
+	PresetId  string
+	TableName string
+	BaseUrl   string
+}
+
+// NewPermalinkReq builds a ZAP-encoded PermalinkReq message from in and returns the bytes.
+func NewPermalinkReq(in PermalinkReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(permalinkReqSize)
+	ob.SetText(permalinkReqProjectIdOff, in.ProjectId)
+	ob.SetText(permalinkReqPresetIdOff, in.PresetId)
+	ob.SetText(permalinkReqTableNameOff, in.TableName)
+	ob.SetText(permalinkReqBaseUrlOff, in.BaseUrl)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	monitorIdOff                = 0
+	monitorProjectIdOff         = 8
+	monitorNameOff              = 16
+	monitorViewOff              = 24
+	monitorFiltersOff           = 32
+	monitorMetricOff            = 40
+	monitorWindowOff            = 48
+	monitorThresholdOperatorOff = 56
+	monitorAlertThresholdOff    = 64
+	monitorWarningThresholdOff  = 72
+	monitorNoDataOff            = 80
+	monitorRenotifyOff          = 88
+	monitorTagsOff              = 96
+	monitorStatusOff            = 104
+	monitorSeverityOff          = 112
+	monitorSeverityChangedAtOff = 120
+	monitorAlertedAtOff         = 128
+	monitorNextRunAtOff         = 136
+	monitorCreatedByOff         = 144
+	monitorCreatedAtOff         = 152
+	monitorUpdatedAtOff         = 160
+	monitorSize                 = 168
+)
+
+// Monitor is a zero-copy view into a ZAP-encoded Monitor message.
+type Monitor struct{ o zap.Object }
+
+// WrapMonitor parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapMonitor(b []byte) (Monitor, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return Monitor{}, err
+	}
+	return Monitor{o: m.Root()}, nil
+}
+
+func (t Monitor) Id() string                { return t.o.Text(monitorIdOff) }
+func (t Monitor) ProjectId() string         { return t.o.Text(monitorProjectIdOff) }
+func (t Monitor) Name() string              { return t.o.Text(monitorNameOff) }
+func (t Monitor) View() string              { return t.o.Text(monitorViewOff) }
+func (t Monitor) Filters() string           { return t.o.Text(monitorFiltersOff) }
+func (t Monitor) Metric() string            { return t.o.Text(monitorMetricOff) }
+func (t Monitor) Window() string            { return t.o.Text(monitorWindowOff) }
+func (t Monitor) ThresholdOperator() string { return t.o.Text(monitorThresholdOperatorOff) }
+func (t Monitor) AlertThreshold() float64   { return t.o.Float64(monitorAlertThresholdOff) }
+func (t Monitor) WarningThreshold() float64 { return t.o.Float64(monitorWarningThresholdOff) }
+func (t Monitor) NoData() string            { return t.o.Text(monitorNoDataOff) }
+func (t Monitor) Renotify() string          { return t.o.Text(monitorRenotifyOff) }
+func (t Monitor) Tags() string              { return t.o.Text(monitorTagsOff) }
+func (t Monitor) Status() string            { return t.o.Text(monitorStatusOff) }
+func (t Monitor) Severity() string          { return t.o.Text(monitorSeverityOff) }
+func (t Monitor) SeverityChangedAt() string { return t.o.Text(monitorSeverityChangedAtOff) }
+func (t Monitor) AlertedAt() string         { return t.o.Text(monitorAlertedAtOff) }
+func (t Monitor) NextRunAt() string         { return t.o.Text(monitorNextRunAtOff) }
+func (t Monitor) CreatedBy() string         { return t.o.Text(monitorCreatedByOff) }
+func (t Monitor) CreatedAt() string         { return t.o.Text(monitorCreatedAtOff) }
+func (t Monitor) UpdatedAt() string         { return t.o.Text(monitorUpdatedAtOff) }
+
+// MonitorInput collects the field values for NewMonitor.
+type MonitorInput struct {
+	Id                string
+	ProjectId         string
+	Name              string
+	View              string
+	Filters           string
+	Metric            string
+	Window            string
+	ThresholdOperator string
+	AlertThreshold    float64
+	WarningThreshold  float64
+	NoData            string
+	Renotify          string
+	Tags              string
+	Status            string
+	Severity          string
+	SeverityChangedAt string
+	AlertedAt         string
+	NextRunAt         string
+	CreatedBy         string
+	CreatedAt         string
+	UpdatedAt         string
+}
+
+// NewMonitor builds a ZAP-encoded Monitor message from in and returns the bytes.
+func NewMonitor(in MonitorInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(monitorSize)
+	ob.SetText(monitorIdOff, in.Id)
+	ob.SetText(monitorProjectIdOff, in.ProjectId)
+	ob.SetText(monitorNameOff, in.Name)
+	ob.SetText(monitorViewOff, in.View)
+	ob.SetText(monitorFiltersOff, in.Filters)
+	ob.SetText(monitorMetricOff, in.Metric)
+	ob.SetText(monitorWindowOff, in.Window)
+	ob.SetText(monitorThresholdOperatorOff, in.ThresholdOperator)
+	ob.SetFloat64(monitorAlertThresholdOff, in.AlertThreshold)
+	ob.SetFloat64(monitorWarningThresholdOff, in.WarningThreshold)
+	ob.SetText(monitorNoDataOff, in.NoData)
+	ob.SetText(monitorRenotifyOff, in.Renotify)
+	ob.SetText(monitorTagsOff, in.Tags)
+	ob.SetText(monitorStatusOff, in.Status)
+	ob.SetText(monitorSeverityOff, in.Severity)
+	ob.SetText(monitorSeverityChangedAtOff, in.SeverityChangedAt)
+	ob.SetText(monitorAlertedAtOff, in.AlertedAt)
+	ob.SetText(monitorNextRunAtOff, in.NextRunAt)
+	ob.SetText(monitorCreatedByOff, in.CreatedBy)
+	ob.SetText(monitorCreatedAtOff, in.CreatedAt)
+	ob.SetText(monitorUpdatedAtOff, in.UpdatedAt)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	monitorListMonitorsOff   = 0
+	monitorListTotalCountOff = 8
+	monitorListSize          = 12
+)
+
+// MonitorList is a zero-copy view into a ZAP-encoded MonitorList message.
+type MonitorList struct{ o zap.Object }
+
+// WrapMonitorList parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapMonitorList(b []byte) (MonitorList, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return MonitorList{}, err
+	}
+	return MonitorList{o: m.Root()}, nil
+}
+
+func (t MonitorList) Monitors() zap.List { return t.o.List(monitorListMonitorsOff) }
+func (t MonitorList) TotalCount() uint32 { return t.o.Uint32(monitorListTotalCountOff) }
+
+// MonitorListInput collects the field values for NewMonitorList.
+type MonitorListInput struct {
+	Monitors   [][]byte
+	TotalCount uint32
+}
+
+// NewMonitorList builds a ZAP-encoded MonitorList message from in and returns the bytes.
+func NewMonitorList(in MonitorListInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(monitorListSize)
+	monitorsLB := b.StartList(0)
+	for _, elem := range in.Monitors {
+		monitorsLB.AddObjectBytes(elem)
+	}
+	ob.SetList(monitorListMonitorsOff, monitorsLB.FinishOffset(), len(in.Monitors))
+	ob.SetUint32(monitorListTotalCountOff, in.TotalCount)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	monitorReqProjectIdOff         = 0
+	monitorReqMonitorIdOff         = 8
+	monitorReqNameOff              = 16
+	monitorReqViewOff              = 24
+	monitorReqFiltersOff           = 32
+	monitorReqMetricOff            = 40
+	monitorReqWindowOff            = 48
+	monitorReqThresholdOperatorOff = 56
+	monitorReqAlertThresholdOff    = 64
+	monitorReqWarningThresholdOff  = 72
+	monitorReqNoDataOff            = 80
+	monitorReqRenotifyOff          = 88
+	monitorReqTagsOff              = 96
+	monitorReqStatusOff            = 104
+	monitorReqSize                 = 112
+)
+
+// MonitorReq is a zero-copy view into a ZAP-encoded MonitorReq message.
+type MonitorReq struct{ o zap.Object }
+
+// WrapMonitorReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapMonitorReq(b []byte) (MonitorReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return MonitorReq{}, err
+	}
+	return MonitorReq{o: m.Root()}, nil
+}
+
+func (t MonitorReq) ProjectId() string         { return t.o.Text(monitorReqProjectIdOff) }
+func (t MonitorReq) MonitorId() string         { return t.o.Text(monitorReqMonitorIdOff) }
+func (t MonitorReq) Name() string              { return t.o.Text(monitorReqNameOff) }
+func (t MonitorReq) View() string              { return t.o.Text(monitorReqViewOff) }
+func (t MonitorReq) Filters() string           { return t.o.Text(monitorReqFiltersOff) }
+func (t MonitorReq) Metric() string            { return t.o.Text(monitorReqMetricOff) }
+func (t MonitorReq) Window() string            { return t.o.Text(monitorReqWindowOff) }
+func (t MonitorReq) ThresholdOperator() string { return t.o.Text(monitorReqThresholdOperatorOff) }
+func (t MonitorReq) AlertThreshold() float64   { return t.o.Float64(monitorReqAlertThresholdOff) }
+func (t MonitorReq) WarningThreshold() float64 { return t.o.Float64(monitorReqWarningThresholdOff) }
+func (t MonitorReq) NoData() string            { return t.o.Text(monitorReqNoDataOff) }
+func (t MonitorReq) Renotify() string          { return t.o.Text(monitorReqRenotifyOff) }
+func (t MonitorReq) Tags() string              { return t.o.Text(monitorReqTagsOff) }
+func (t MonitorReq) Status() string            { return t.o.Text(monitorReqStatusOff) }
+
+// MonitorReqInput collects the field values for NewMonitorReq.
+type MonitorReqInput struct {
+	ProjectId         string
+	MonitorId         string
+	Name              string
+	View              string
+	Filters           string
+	Metric            string
+	Window            string
+	ThresholdOperator string
+	AlertThreshold    float64
+	WarningThreshold  float64
+	NoData            string
+	Renotify          string
+	Tags              string
+	Status            string
+}
+
+// NewMonitorReq builds a ZAP-encoded MonitorReq message from in and returns the bytes.
+func NewMonitorReq(in MonitorReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(monitorReqSize)
+	ob.SetText(monitorReqProjectIdOff, in.ProjectId)
+	ob.SetText(monitorReqMonitorIdOff, in.MonitorId)
+	ob.SetText(monitorReqNameOff, in.Name)
+	ob.SetText(monitorReqViewOff, in.View)
+	ob.SetText(monitorReqFiltersOff, in.Filters)
+	ob.SetText(monitorReqMetricOff, in.Metric)
+	ob.SetText(monitorReqWindowOff, in.Window)
+	ob.SetText(monitorReqThresholdOperatorOff, in.ThresholdOperator)
+	ob.SetFloat64(monitorReqAlertThresholdOff, in.AlertThreshold)
+	ob.SetFloat64(monitorReqWarningThresholdOff, in.WarningThreshold)
+	ob.SetText(monitorReqNoDataOff, in.NoData)
+	ob.SetText(monitorReqRenotifyOff, in.Renotify)
+	ob.SetText(monitorReqTagsOff, in.Tags)
+	ob.SetText(monitorReqStatusOff, in.Status)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	mutationSuccessOff = 0
+	mutationIdOff      = 8
+	mutationSize       = 16
+)
+
+// Mutation is a zero-copy view into a ZAP-encoded Mutation message.
+type Mutation struct{ o zap.Object }
+
+// WrapMutation parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapMutation(b []byte) (Mutation, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return Mutation{}, err
+	}
+	return Mutation{o: m.Root()}, nil
+}
+
+func (t Mutation) Success() bool { return t.o.Bool(mutationSuccessOff) }
+func (t Mutation) Id() string    { return t.o.Text(mutationIdOff) }
+
+// MutationInput collects the field values for NewMutation.
+type MutationInput struct {
+	Success bool
+	Id      string
+}
+
+// NewMutation builds a ZAP-encoded Mutation message from in and returns the bytes.
+func NewMutation(in MutationInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(mutationSize)
+	ob.SetBool(mutationSuccessOff, in.Success)
+	ob.SetText(mutationIdOff, in.Id)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	stringResultValueOff = 0
+	stringResultSize     = 8
+)
+
+// StringResult is a zero-copy view into a ZAP-encoded StringResult message.
+type StringResult struct{ o zap.Object }
+
+// WrapStringResult parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapStringResult(b []byte) (StringResult, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return StringResult{}, err
+	}
+	return StringResult{o: m.Root()}, nil
+}
+
+func (t StringResult) Value() string { return t.o.Text(stringResultValueOff) }
+
+// StringResultInput collects the field values for NewStringResult.
+type StringResultInput struct {
+	Value string
+}
+
+// NewStringResult builds a ZAP-encoded StringResult message from in and returns the bytes.
+func NewStringResult(in StringResultInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(stringResultSize)
+	ob.SetText(stringResultValueOff, in.Value)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	analyticsResultRowsOff = 0
+	analyticsResultSize    = 8
+)
+
+// AnalyticsResult is a zero-copy view into a ZAP-encoded AnalyticsResult message.
+type AnalyticsResult struct{ o zap.Object }
+
+// WrapAnalyticsResult parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapAnalyticsResult(b []byte) (AnalyticsResult, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return AnalyticsResult{}, err
+	}
+	return AnalyticsResult{o: m.Root()}, nil
+}
+
+func (t AnalyticsResult) Rows() string { return t.o.Text(analyticsResultRowsOff) }
+
+// AnalyticsResultInput collects the field values for NewAnalyticsResult.
+type AnalyticsResultInput struct {
+	Rows string
+}
+
+// NewAnalyticsResult builds a ZAP-encoded AnalyticsResult message from in and returns the bytes.
+func NewAnalyticsResult(in AnalyticsResultInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(analyticsResultSize)
+	ob.SetText(analyticsResultRowsOff, in.Rows)
+	ob.FinishAsRoot()
+	return b.Finish()
+}
+
+const (
+	analyticsReqProjectIdOff = 0
+	analyticsReqQueryNameOff = 8
+	analyticsReqFilterOff    = 16
+	analyticsReqQueryOff     = 24
+	analyticsReqLimitOff     = 32
+	analyticsReqSize         = 36
+)
+
+// AnalyticsReq is a zero-copy view into a ZAP-encoded AnalyticsReq message.
+type AnalyticsReq struct{ o zap.Object }
+
+// WrapAnalyticsReq parses b and returns a typed view. Returns an error if the
+// wire-level checks (magic, version, size) fail.
+func WrapAnalyticsReq(b []byte) (AnalyticsReq, error) {
+	m, err := zap.Parse(b)
+	if err != nil {
+		return AnalyticsReq{}, err
+	}
+	return AnalyticsReq{o: m.Root()}, nil
+}
+
+func (t AnalyticsReq) ProjectId() string { return t.o.Text(analyticsReqProjectIdOff) }
+func (t AnalyticsReq) QueryName() string { return t.o.Text(analyticsReqQueryNameOff) }
+func (t AnalyticsReq) Filter() string    { return t.o.Text(analyticsReqFilterOff) }
+func (t AnalyticsReq) Query() string     { return t.o.Text(analyticsReqQueryOff) }
+func (t AnalyticsReq) Limit() uint32     { return t.o.Uint32(analyticsReqLimitOff) }
+
+// AnalyticsReqInput collects the field values for NewAnalyticsReq.
+type AnalyticsReqInput struct {
+	ProjectId string
+	QueryName string
+	Filter    string
+	Query     string
+	Limit     uint32
+}
+
+// NewAnalyticsReq builds a ZAP-encoded AnalyticsReq message from in and returns the bytes.
+func NewAnalyticsReq(in AnalyticsReqInput) []byte {
+	b := zap.NewBuilder(256)
+	ob := b.StartObject(analyticsReqSize)
+	ob.SetText(analyticsReqProjectIdOff, in.ProjectId)
+	ob.SetText(analyticsReqQueryNameOff, in.QueryName)
+	ob.SetText(analyticsReqFilterOff, in.Filter)
+	ob.SetText(analyticsReqQueryOff, in.Query)
+	ob.SetUint32(analyticsReqLimitOff, in.Limit)
+	ob.FinishAsRoot()
+	return b.Finish()
+}

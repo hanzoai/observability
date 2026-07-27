@@ -2,8 +2,17 @@
 
 A Hanzo Base-native Go service in the console tRPC→ZAP migration. It carries the
 Langfuse-style observability OLTP model (traces, observations, sessions, scores,
-score-configs, events), replacing 8 console tRPC routers. It clones the
-[ui-customization](../ui-customization) reference pattern.
+score-configs, events) AND the presentation layer over it (dashboards, widgets,
+table batch-actions, view presets, monitors), replacing 13 console tRPC routers.
+It clones the [ui-customization](../ui-customization) reference pattern.
+
+The dashboards half shipped first as its own binary (hanzoai/dashboards, msgType
+206) and was folded in here. It was never a separate concern: a dashboard is a
+saved QUERY over the traces/observations/scores this service already owns, and
+its analytics methods are the same ClickHouse aggregations the trace/score
+analytics need. Two binaries meant writing that shim twice against two copies of
+one OLTP model. The dashboards ordinals live at 200+ (their original 0–29 offset
+by 200); its files are the `dash_*.go` set.
 
 ## The one rule
 
@@ -36,19 +45,34 @@ the data structs; `gen/` is its Go projection via `make zap-gen`. Never hand-edi
 - **Three wire layers, separated:** transport (`luxfi/zap` Node, msgType **203**)
   / envelope (`server/wire.go`) / payload (`gen/` typed views). The capability is
   carried as OPAQUE bytes through all three — auth is a value, not a place.
-- **One auth chokepoint:** `Server.authorize`. Kind + the per-method
-  `ObsPermissions` bit are always enforced (table `methodPermission`, fail closed
-  on an unknown method); signature verify is gated on a wired issuer registry
-  (TODO → SPEC.md §2.3). Do not scatter permission checks into the handlers.
+- **Two gates, deliberately separate:** `Server.authorize` answers "may this
+  caller invoke this method" (Kind + the per-method `ObsPermissions` bit, table
+  `methodPermission`, fail closed on an unknown method; signature verify gated on
+  a wired issuer registry — TODO → SPEC.md §2.3). `Server.scope` answers "whose
+  rows may it touch" and returns the project every handler is passed. Braiding
+  them is how a valid capability ends up reading another tenant's data. Do not
+  scatter permission checks into the handlers, and do not re-read projectId there
+  — take the passed `project`.
+- **One tenant boundary:** `scope()` reads the payload's `ProjectId` (text @0 in
+  every request struct) or, for a pipelined call, INHERITS the target's resolved
+  project — so a dependent call can never name a different tenant than the call
+  it pipelines off. The @0 assumption is pinned by
+  `TestEveryRequestStructCarriesProjectIdAtZero`; a new request struct that puts
+  another text field first fails that test instead of silently mis-scoping.
 - **One backend:** Hanzo Base. No Prisma, Postgres/ClickHouse-as-source-of-truth,
   Mongo, Redis, tRPC, nginx. OLTP rows live in the `obs_*` Base collections
   (encrypted SQLite via the vault plugin when `--vaultDir` is set), every query
   scoped to `projectId`.
-- **Honest about the gap:** the ClickHouse columnar aggregations
-  (`*All`/`*CountAll`/`metrics`/`filterOptions`/score-comparison) are NOT faked on
-  OLTP rows — they return `Empty{Stubbed:true}` with the exact upstream query to
-  port enumerated in `server/handlers.go` `handleStub`. Wiring the analytics shim
-  is additive; don't fabricate aggregates.
+- **Honest about the gap — and loud about it:** the ClickHouse columnar
+  aggregations (`*All`/`*CountAll`/`metrics`/`filterOptions`/score-comparison,
+  plus `chart`/`scoreHistogram`/`executeQuery`) and the BullMQ
+  `isBatchActionInProgress` are NOT faked on OLTP rows. They answer **501** via
+  the single `Server.stub` helper, carrying the typed zero body and a log naming
+  the shim. 501, never a 200: a stubbed 200 with an empty result is
+  indistinguishable at the call site from a real query that matched nothing, so
+  the UI renders "no data" and the missing backend never surfaces. The status is
+  the one field a caller cannot skip reading. Wiring a shim is additive; don't
+  fabricate aggregates and don't downgrade the status.
 - **One way to nest a message:** as pre-encoded `bytes`, `Wrap*`-ed on read
   (`TraceWithDetail.Trace`, `SessionWithScores.Session`, every `list<…>` element).
   zapgen's inline-struct embed does NOT round-trip a `Finish()`'d sub-message.

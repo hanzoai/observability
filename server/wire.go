@@ -91,6 +91,54 @@ const (
 	MethodScoreCountAll            uint32 = 141
 	MethodEventAll                 uint32 = 160
 	MethodAnalyticsScoreComparison uint32 = 180
+
+	// ── dashboards surface, folded in from the standalone binary ──────────
+	// These kept the ordinals that binary published (0–29), offset by 200. The
+	// offset is mechanical and reversible; renumbering into the gaps above
+	// would silently repoint any client already built against the old ids.
+
+	// dashboards — OLTP CRUD (honest).
+	MethodAllDashboards          uint32 = 200
+	MethodGetDashboard           uint32 = 201
+	MethodCreateDashboard        uint32 = 202
+	MethodUpdateDashboardMeta    uint32 = 203
+	MethodUpdateDashboardDef     uint32 = 204
+	MethodUpdateDashboardFilters uint32 = 205
+	MethodCloneDashboard         uint32 = 206
+	MethodDeleteDashboard        uint32 = 207
+
+	// widgets — OLTP CRUD (honest).
+	MethodAllWidgets          uint32 = 211
+	MethodGetWidget           uint32 = 212
+	MethodCreateWidget        uint32 = 213
+	MethodUpdateWidget        uint32 = 214
+	MethodCopyWidgetToProject uint32 = 215
+	MethodDeleteWidget        uint32 = 216
+
+	// table batch-action — BullMQ queue (STUBBED).
+	MethodIsBatchActionInProgress uint32 = 217
+
+	// table view presets — OLTP CRUD (honest).
+	MethodGetPresetsByTableName uint32 = 218
+	MethodGetPresetById         uint32 = 219
+	MethodCreatePreset          uint32 = 220
+	MethodUpdatePreset          uint32 = 221
+	MethodUpdatePresetName      uint32 = 222
+	MethodDeletePreset          uint32 = 223
+	MethodGeneratePermalink     uint32 = 224
+
+	// monitors — OLTP CRUD (honest).
+	MethodAllMonitors   uint32 = 225
+	MethodGetMonitor    uint32 = 226
+	MethodCreateMonitor uint32 = 227
+	MethodUpdateMonitor uint32 = 228
+	MethodDeleteMonitor uint32 = 229
+
+	// dashboard analytics — ClickHouse (STUBBED; shares handleStub with the
+	// trace/score analytics above, which is the point of the merge).
+	MethodChart          uint32 = 240
+	MethodScoreHistogram uint32 = 241
+	MethodExecuteQuery   uint32 = 242
 )
 
 // NoTarget is the Target value for a call that does not pipeline off an
@@ -122,7 +170,9 @@ const (
 	StatusUnauthorized uint32 = 401
 	StatusForbidden    uint32 = 403
 	StatusNotFound     uint32 = 404
+	StatusConflict     uint32 = 409
 	StatusInternal     uint32 = 500
+	StatusNotImpl      uint32 = 501
 )
 
 // Call is the decoded request envelope.

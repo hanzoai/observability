@@ -82,7 +82,7 @@ func main() {
 	// Verifier: bootstrap (ed25519, no issuer registry → Kind+Permissions
 	// enforced, signature step skipped). Wire IssuerKey to the IAM pubkey
 	// registry to enable full cryptographic verification.
-	srv := server.NewServer(app, logger, defaultOrg, zcap.Verifier{})
+	srv := server.NewServer(app, logger, zcap.Verifier{})
 	srv.Register(node)
 
 	app.OnServe().Bind(&hook.Handler[*core.ServeEvent]{

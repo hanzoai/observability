@@ -42,7 +42,7 @@ func newHarness(t *testing.T, port int) *harness {
 	logger := luxlog.New("component", "obs-test")
 	peer := "obs-test-srv-" + itoa(port)
 	node := zaplib.NewNode(zaplib.NodeConfig{NodeID: peer, Port: port, NoDiscovery: true})
-	srv := server.NewServer(app, logger, testOrg, zcap.Verifier{})
+	srv := server.NewServer(app, logger, zcap.Verifier{})
 	srv.Register(node)
 	if err := node.Start(); err != nil {
 		t.Fatalf("node start: %v", err)
@@ -57,20 +57,7 @@ func newHarness(t *testing.T, port int) *harness {
 // client dials the harness with a synthetic cap holding perms.
 func (h *harness) client(t *testing.T, perms uint64, port int) *server.Client {
 	t.Helper()
-	capBuf, err := server.SyntheticCap(perms)
-	if err != nil {
-		t.Fatalf("synthetic cap: %v", err)
-	}
-	cli := zaplib.NewNode(zaplib.NodeConfig{NodeID: "obs-cli-" + itoa(port), Port: port, NoDiscovery: true})
-	if err := cli.Start(); err != nil {
-		t.Fatalf("client node start: %v", err)
-	}
-	t.Cleanup(func() { cli.Stop() })
-	c, err := server.Dial(cli, h.addr, h.peer, capBuf)
-	if err != nil {
-		t.Fatalf("dial: %v", err)
-	}
-	time.Sleep(150 * time.Millisecond) // handshake settle
+	c, _ := dialClient(t, h.addr, h.peer, perms)
 	return c
 }
 
@@ -521,21 +508,24 @@ func TestAnalyticsStubsReturnStubbed(t *testing.T) {
 	ctx, cancel := ctx5()
 	defer cancel()
 
+	payload := gen.NewTableQueryParams(gen.TableQueryParamsInput{ProjectId: testOrg})
 	for _, m := range []uint32{
 		server.MethodTraceAll, server.MethodTraceCountAll, server.MethodTraceMetrics,
 		server.MethodTraceFilterOptions, server.MethodSessionAll, server.MethodSessionCountAll,
 		server.MethodScoreAll, server.MethodScoreCountAll, server.MethodEventAll,
 		server.MethodAnalyticsScoreComparison,
 	} {
-		e, err := cli.AnalyticsStub(ctx, m, gen.TableQueryParamsInput{ProjectId: testOrg})
-		if err != nil {
-			t.Fatalf("stub method %d: %v", m, err)
-		}
-		if !e.Stubbed() {
-			t.Fatalf("method %d: expected Stubbed=true (ClickHouse shim pending)", m)
+		// 501, not 200. A stubbed 200 carrying an empty aggregate is
+		// indistinguishable at the call site from a real query that matched
+		// nothing, so the UI would render "no data" and the missing ClickHouse
+		// backend would never surface. The status is the field a caller cannot
+		// skip reading.
+		if got := cli.Probe(ctx, m, payload); got != server.StatusNotImpl {
+			t.Fatalf("method %d: status = %d, want %d (not-implemented, never 200)",
+				m, got, server.StatusNotImpl)
 		}
 	}
-	t.Logf("analytics stubs ok: all 10 return Stubbed=true (no faked aggregates)")
+	t.Logf("analytics stubs ok: all 10 answer 501 (no faked aggregates, no empty-looking 200s)")
 }
 
 func TestAnalyticsStubDeniedWithoutAnalyticsBit(t *testing.T) {

@@ -2,8 +2,15 @@
 
 A Hanzo Base-native Go service binary in the console tRPC→ZAP migration. It
 serves the **Observability** capability — the Langfuse-style trace / observation
-/ score OLTP backbone — that the Next.js console previously ran in-process as 8
-tRPC routers hitting ClickHouse + Prisma.
+/ score OLTP backbone, plus the dashboards/widgets/tables/presets/monitors
+presentation layer over it — that the Next.js console previously ran in-process
+as 13 tRPC routers hitting ClickHouse + Prisma.
+
+The dashboards half shipped first as a standalone binary (`hanzoai/dashboards`,
+msgType 206) and was folded in: a dashboard is a saved query over the very
+traces/observations/scores this service owns, and both halves were waiting on the
+same ClickHouse shim. One service, one shim, one capability gate. Those methods
+keep their original ordinals offset by 200, and live in the `dash_*.go` files.
 
 Replaces these console routers:
 
@@ -17,6 +24,11 @@ Replaces these console routers:
 | `scoreConfigsRouter` | `…/routers/scoreConfigs.ts` |
 | `scoreAnalyticsRouter` | `…/features/score-analytics/server/scoreAnalyticsRouter.ts` |
 | `eventsRouter` | `…/features/events/server/eventsRouter.ts` |
+| `dashboardRouter` | `…/routers/dashboards.ts` |
+| `dashboardWidgetRouter` | `…/routers/dashboardWidgets.ts` |
+| `tableRouter` | `…/routers/tables.ts` (batch-action progress) |
+| `TableViewPresetsRouter` | `…/routers/tableViewPresets.ts` |
+| `monitorsRouter` | `…/routers/monitors.ts` |
 
 **Pattern:** Go binary on [Hanzo Base](../base) (embedded encrypted SQLite +
 plugins) exposing a typed [ZAP](../zap) capability-RPC interface. No Prisma, no

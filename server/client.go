@@ -418,3 +418,308 @@ func SyntheticCap(perms uint64) ([]byte, error) {
 	}
 	return c.Bytes(), nil
 }
+
+
+// ─────────────────── dashboards surface ───────────────────
+// Ported from the standalone dashboards binary when it was folded in. Same
+// envelope, same capability, same connection — only the method ids differ.
+func (c *Client) AllDashboards(ctx context.Context, in gen.ListReqInput) (gen.DashboardList, error) {
+	body, err := c.do(ctx, MethodAllDashboards, gen.NewListReq(in))
+	if err != nil {
+		return gen.DashboardList{}, err
+	}
+	return gen.WrapDashboardList(body)
+}
+
+func (c *Client) GetDashboard(ctx context.Context, in gen.IdReqInput) (gen.Dashboard, error) {
+	body, err := c.do(ctx, MethodGetDashboard, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Dashboard{}, err
+	}
+	return gen.WrapDashboard(body)
+}
+
+func (c *Client) CreateDashboard(ctx context.Context, in gen.CreateDashReqInput) (gen.Dashboard, error) {
+	body, err := c.do(ctx, MethodCreateDashboard, gen.NewCreateDashReq(in))
+	if err != nil {
+		return gen.Dashboard{}, err
+	}
+	return gen.WrapDashboard(body)
+}
+
+func (c *Client) UpdateDashboardMetadata(ctx context.Context, in gen.UpdateDashReqInput) (gen.Dashboard, error) {
+	body, err := c.do(ctx, MethodUpdateDashboardMeta, gen.NewUpdateDashReq(in))
+	if err != nil {
+		return gen.Dashboard{}, err
+	}
+	return gen.WrapDashboard(body)
+}
+
+func (c *Client) UpdateDashboardDefinition(ctx context.Context, in gen.DashDefReqInput) (gen.Dashboard, error) {
+	body, err := c.do(ctx, MethodUpdateDashboardDef, gen.NewDashDefReq(in))
+	if err != nil {
+		return gen.Dashboard{}, err
+	}
+	return gen.WrapDashboard(body)
+}
+
+func (c *Client) UpdateDashboardFilters(ctx context.Context, in gen.DashFiltersReqInput) (gen.Dashboard, error) {
+	body, err := c.do(ctx, MethodUpdateDashboardFilters, gen.NewDashFiltersReq(in))
+	if err != nil {
+		return gen.Dashboard{}, err
+	}
+	return gen.WrapDashboard(body)
+}
+
+func (c *Client) CloneDashboard(ctx context.Context, in gen.IdReqInput) (gen.Dashboard, error) {
+	body, err := c.do(ctx, MethodCloneDashboard, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Dashboard{}, err
+	}
+	return gen.WrapDashboard(body)
+}
+
+func (c *Client) DeleteDashboard(ctx context.Context, in gen.IdReqInput) (gen.Mutation, error) {
+	body, err := c.do(ctx, MethodDeleteDashboard, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Mutation{}, err
+	}
+	return gen.WrapMutation(body)
+}
+
+func (c *Client) AllWidgets(ctx context.Context, in gen.ListReqInput) (gen.WidgetList, error) {
+	body, err := c.do(ctx, MethodAllWidgets, gen.NewListReq(in))
+	if err != nil {
+		return gen.WidgetList{}, err
+	}
+	return gen.WrapWidgetList(body)
+}
+
+func (c *Client) GetWidget(ctx context.Context, in gen.IdReqInput) (gen.Widget, error) {
+	body, err := c.do(ctx, MethodGetWidget, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Widget{}, err
+	}
+	return gen.WrapWidget(body)
+}
+
+func (c *Client) CreateWidget(ctx context.Context, in gen.WidgetReqInput) (gen.Widget, error) {
+	body, err := c.do(ctx, MethodCreateWidget, gen.NewWidgetReq(in))
+	if err != nil {
+		return gen.Widget{}, err
+	}
+	return gen.WrapWidget(body)
+}
+
+func (c *Client) UpdateWidget(ctx context.Context, in gen.WidgetReqInput) (gen.Widget, error) {
+	body, err := c.do(ctx, MethodUpdateWidget, gen.NewWidgetReq(in))
+	if err != nil {
+		return gen.Widget{}, err
+	}
+	return gen.WrapWidget(body)
+}
+
+func (c *Client) CopyWidgetToProject(ctx context.Context, in gen.CopyWidgetReqInput) (gen.Mutation, error) {
+	body, err := c.do(ctx, MethodCopyWidgetToProject, gen.NewCopyWidgetReq(in))
+	if err != nil {
+		return gen.Mutation{}, err
+	}
+	return gen.WrapMutation(body)
+}
+
+func (c *Client) DeleteWidget(ctx context.Context, in gen.IdReqInput) (gen.Mutation, error) {
+	body, err := c.do(ctx, MethodDeleteWidget, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Mutation{}, err
+	}
+	return gen.WrapMutation(body)
+}
+
+func (c *Client) GetPresetsByTableName(ctx context.Context, in gen.PresetListReqInput) (gen.PresetList, error) {
+	body, err := c.do(ctx, MethodGetPresetsByTableName, gen.NewPresetListReq(in))
+	if err != nil {
+		return gen.PresetList{}, err
+	}
+	return gen.WrapPresetList(body)
+}
+
+func (c *Client) GetPresetById(ctx context.Context, in gen.IdReqInput) (gen.Preset, error) {
+	body, err := c.do(ctx, MethodGetPresetById, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Preset{}, err
+	}
+	return gen.WrapPreset(body)
+}
+
+func (c *Client) CreatePreset(ctx context.Context, in gen.PresetReqInput) (gen.Preset, error) {
+	body, err := c.do(ctx, MethodCreatePreset, gen.NewPresetReq(in))
+	if err != nil {
+		return gen.Preset{}, err
+	}
+	return gen.WrapPreset(body)
+}
+
+func (c *Client) UpdatePreset(ctx context.Context, in gen.PresetReqInput) (gen.Preset, error) {
+	body, err := c.do(ctx, MethodUpdatePreset, gen.NewPresetReq(in))
+	if err != nil {
+		return gen.Preset{}, err
+	}
+	return gen.WrapPreset(body)
+}
+
+func (c *Client) UpdatePresetName(ctx context.Context, in gen.PresetNameReqInput) (gen.Preset, error) {
+	body, err := c.do(ctx, MethodUpdatePresetName, gen.NewPresetNameReq(in))
+	if err != nil {
+		return gen.Preset{}, err
+	}
+	return gen.WrapPreset(body)
+}
+
+func (c *Client) DeletePreset(ctx context.Context, in gen.IdReqInput) (gen.Mutation, error) {
+	body, err := c.do(ctx, MethodDeletePreset, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Mutation{}, err
+	}
+	return gen.WrapMutation(body)
+}
+
+func (c *Client) GeneratePermalink(ctx context.Context, in gen.PermalinkReqInput) (gen.StringResult, error) {
+	body, err := c.do(ctx, MethodGeneratePermalink, gen.NewPermalinkReq(in))
+	if err != nil {
+		return gen.StringResult{}, err
+	}
+	return gen.WrapStringResult(body)
+}
+
+func (c *Client) AllMonitors(ctx context.Context, in gen.ListReqInput) (gen.MonitorList, error) {
+	body, err := c.do(ctx, MethodAllMonitors, gen.NewListReq(in))
+	if err != nil {
+		return gen.MonitorList{}, err
+	}
+	return gen.WrapMonitorList(body)
+}
+
+func (c *Client) GetMonitor(ctx context.Context, in gen.IdReqInput) (gen.Monitor, error) {
+	body, err := c.do(ctx, MethodGetMonitor, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Monitor{}, err
+	}
+	return gen.WrapMonitor(body)
+}
+
+func (c *Client) CreateMonitor(ctx context.Context, in gen.MonitorReqInput) (gen.Monitor, error) {
+	body, err := c.do(ctx, MethodCreateMonitor, gen.NewMonitorReq(in))
+	if err != nil {
+		return gen.Monitor{}, err
+	}
+	return gen.WrapMonitor(body)
+}
+
+func (c *Client) UpdateMonitor(ctx context.Context, in gen.MonitorReqInput) (gen.Monitor, error) {
+	body, err := c.do(ctx, MethodUpdateMonitor, gen.NewMonitorReq(in))
+	if err != nil {
+		return gen.Monitor{}, err
+	}
+	return gen.WrapMonitor(body)
+}
+
+func (c *Client) DeleteMonitor(ctx context.Context, in gen.IdReqInput) (gen.Mutation, error) {
+	body, err := c.do(ctx, MethodDeleteMonitor, gen.NewIdReq(in))
+	if err != nil {
+		return gen.Mutation{}, err
+	}
+	return gen.WrapMutation(body)
+}
+
+// PipelineCreateDashboardThenWidget creates a dashboard and, pipelined off that
+// call's promise, creates a widget in the SAME project — Cap'n Proto promise
+// pipelining. The widget call Targets the dashboard call's PromiseID; the server
+// resolves the dashboard call's project scope and only then dispatches the
+// promised widget call against it, eliding a client round trip. This is the
+// canonical dashboard-builder flow: open a dashboard, drop a widget on it.
+//
+// Transport note (load-bearing): luxfi/zap processes a single connection's
+// frames strictly FIFO — one handler runs to completion before the next frame is
+// read (node.go dispatchLoop). Genuine concurrent in-flight calls therefore need
+// SEPARATE connections, where the server runs two dispatch loops concurrently and
+// its promise table (Server.await/resolve) coordinates them. `dep` is a SECOND
+// client connection over which the dependent CreateWidget call is shipped; pass
+// a Client dialed on its own *zaplib.Node. When dep == c (one connection) this
+// still works but degrades to sequential (no overlap) because of FIFO.
+//
+// Proof (on the shared send log both clients append to): the widget send precedes
+// the dashboard recv — the dependent call was on the wire before the call it
+// depends on had answered.
+func (c *Client) PipelineCreateDashboardThenWidget(
+	ctx context.Context, dep *Client, dash gen.CreateDashReqInput, widget gen.WidgetReqInput,
+) (gen.Dashboard, gen.Widget, error) {
+	dashPromise := nextPipelineID()
+	widgetPromise := nextPipelineID()
+
+	var (
+		gotDash   gen.Dashboard
+		gotWidget gen.Widget
+		dashErr   error
+		widgetErr error
+		wg        sync.WaitGroup
+	)
+	// barrier releases the dependent send only after the dashboard send is
+	// committed to its wire, so the server resolves the dashboard promise id
+	// before (or concurrently with) the dependent call's await.
+	barrier := make(chan struct{})
+	wg.Add(2)
+
+	// Call #1: createDashboard on connection c — the promise the widget targets.
+	go func() {
+		defer wg.Done()
+		close(barrier)
+		resp, err := c.call(ctx, MethodCreateDashboard, dashPromise, NoTarget, gen.NewCreateDashReq(dash))
+		if err != nil {
+			dashErr = err
+			return
+		}
+		if resp.Status != StatusOK {
+			dashErr = fmt.Errorf("createDashboard: status %d: %s", resp.Status, resp.Body)
+			return
+		}
+		gotDash, dashErr = gen.WrapDashboard(resp.Body)
+	}()
+
+	// Call #2: createWidget on connection dep, pipelined off the dashboard promise.
+	// Shipped without awaiting the dashboard answer; the server holds it until the
+	// dashboard call resolves the project scope.
+	go func() {
+		defer wg.Done()
+		<-barrier
+		resp, err := dep.call(ctx, MethodCreateWidget, widgetPromise, dashPromise, gen.NewWidgetReq(widget))
+		if err != nil {
+			widgetErr = err
+			return
+		}
+		if resp.Status != StatusOK {
+			widgetErr = fmt.Errorf("createWidget: status %d: %s", resp.Status, resp.Body)
+			return
+		}
+		gotWidget, widgetErr = gen.WrapWidget(resp.Body)
+	}()
+
+	wg.Wait()
+	if dashErr != nil {
+		return gen.Dashboard{}, gen.Widget{}, dashErr
+	}
+	if widgetErr != nil {
+		return gen.Dashboard{}, gen.Widget{}, widgetErr
+	}
+	return gotDash, gotWidget, nil
+}
+
+// Probe issues a raw call and reports only the response status. Tests use it to
+// assert the gate and the stub contract on methods with no typed client method
+// — the status is the whole assertion, so decoding a body would add nothing.
+func (c *Client) Probe(ctx context.Context, method uint32, payload []byte) uint32 {
+	resp, err := c.call(ctx, method, c.nextPromise(), NoTarget, payload)
+	if err != nil {
+		return 0
+	}
+	return resp.Status
+}

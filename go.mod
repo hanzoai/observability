@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/hanzoai/base v1.4.2
+	github.com/hanzoai/dbx v1.17.2
 	github.com/luxfi/log v1.4.3
 	github.com/luxfi/zap v0.8.1
 	github.com/zap-proto/go v1.3.0
@@ -60,8 +61,7 @@ require (
 	github.com/grandcat/zeroconf v1.0.0 // indirect
 	github.com/gtank/merlin v0.1.1 // indirect
 	github.com/gtank/ristretto255 v0.2.0 // indirect
-	github.com/hanzoai/dbx v1.17.2 // indirect
-	github.com/hanzoai/orm v0.6.14 // indirect
+	github.com/hanzoai/orm v0.6.16 // indirect
 	github.com/hanzoai/pubsub-go v1.0.0 // indirect
 	github.com/hanzoai/tasks v1.40.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -94,7 +94,7 @@ require (
 	github.com/luxfi/mock v0.1.1 // indirect
 	github.com/luxfi/pq v1.0.3 // indirect
 	github.com/luxfi/pulsar v1.1.1 // indirect
-	github.com/luxfi/threshold v1.9.4 // indirect
+	github.com/luxfi/threshold v1.9.5 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.21 // indirect
 	github.com/miekg/dns v1.1.72 // indirect
@@ -137,7 +137,7 @@ require (
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/image v0.38.0 // indirect
 	golang.org/x/mod v0.36.0 // indirect
-	golang.org/x/net v0.55.0 // indirect
+	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect

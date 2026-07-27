@@ -26,12 +26,12 @@ func (s *Server) reply(req Call, status uint32, body []byte) (*zaplib.Message, e
 
 // =============================== traces ====================================
 
-func (s *Server) handleTraceById(req Call) (*zaplib.Message, error) {
+func (s *Server) handleTraceById(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapTraceByIdParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad TraceByIdParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColTrace, p.ProjectId(), p.TraceId())
+	rec, err := s.findByExt(ColTrace, project, p.TraceId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusOK, gen.NewTrace(gen.TraceInput{Present: false}))
@@ -41,12 +41,12 @@ func (s *Server) handleTraceById(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, traceToBytes(rec))
 }
 
-func (s *Server) handleTraceWithDetail(req Call) (*zaplib.Message, error) {
+func (s *Server) handleTraceWithDetail(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapTraceByIdParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad TraceByIdParams: "+err.Error()))
 	}
-	trace, err := s.findByExt(ColTrace, p.ProjectId(), p.TraceId())
+	trace, err := s.findByExt(ColTrace, project, p.TraceId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusOK, gen.NewTraceWithDetail(gen.TraceWithDetailInput{
@@ -60,13 +60,13 @@ func (s *Server) handleTraceWithDetail(req Call) (*zaplib.Message, error) {
 	// procedure assembled from ClickHouse; here a project-scoped FK lookup).
 	obsRecs, err := s.app.FindRecordsByFilter(ColObservation,
 		"projectId = {:p} && traceId = {:t}", "startTime", 0, 0,
-		map[string]any{"p": p.ProjectId(), "t": p.TraceId()})
+		map[string]any{"p": project, "t": p.TraceId()})
 	if err != nil {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
 	}
 	scoreRecs, err := s.app.FindRecordsByFilter(ColScore,
 		"projectId = {:p} && traceId = {:t}", "timestamp", 0, 0,
-		map[string]any{"p": p.ProjectId(), "t": p.TraceId()})
+		map[string]any{"p": project, "t": p.TraceId()})
 	if err != nil {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
 	}
@@ -92,12 +92,12 @@ func (s *Server) handleTraceWithDetail(req Call) (*zaplib.Message, error) {
 	}))
 }
 
-func (s *Server) handleTraceBookmark(req Call) (*zaplib.Message, error) {
+func (s *Server) handleTraceBookmark(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapTraceBookmarkParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad TraceBookmarkParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColTrace, p.ProjectId(), p.TraceId())
+	rec, err := s.findByExt(ColTrace, project, p.TraceId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusNotFound, errorBody("trace not found"))
@@ -111,12 +111,12 @@ func (s *Server) handleTraceBookmark(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, traceToBytes(rec))
 }
 
-func (s *Server) handleTracePublish(req Call) (*zaplib.Message, error) {
+func (s *Server) handleTracePublish(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapTracePublishParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad TracePublishParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColTrace, p.ProjectId(), p.TraceId())
+	rec, err := s.findByExt(ColTrace, project, p.TraceId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusNotFound, errorBody("trace not found"))
@@ -130,12 +130,12 @@ func (s *Server) handleTracePublish(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, traceToBytes(rec))
 }
 
-func (s *Server) handleTraceUpdateTags(req Call) (*zaplib.Message, error) {
+func (s *Server) handleTraceUpdateTags(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapTraceUpdateTagsParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad TraceUpdateTagsParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColTrace, p.ProjectId(), p.TraceId())
+	rec, err := s.findByExt(ColTrace, project, p.TraceId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusNotFound, errorBody("trace not found"))
@@ -150,7 +150,7 @@ func (s *Server) handleTraceUpdateTags(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, traceToBytes(rec))
 }
 
-func (s *Server) handleTraceDeleteMany(req Call) (*zaplib.Message, error) {
+func (s *Server) handleTraceDeleteMany(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapTraceDeleteManyParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad TraceDeleteManyParams: "+err.Error()))
@@ -159,7 +159,7 @@ func (s *Server) handleTraceDeleteMany(req Call) (*zaplib.Message, error) {
 	var deleted uint64
 	for i := 0; i < ids.Len(); i++ {
 		ext := string(ids.BytesAt(i))
-		rec, err := s.findByExt(ColTrace, p.ProjectId(), ext)
+		rec, err := s.findByExt(ColTrace, project, ext)
 		if err != nil {
 			if notFound(err) {
 				continue
@@ -176,12 +176,12 @@ func (s *Server) handleTraceDeleteMany(req Call) (*zaplib.Message, error) {
 
 // ============================ observations =================================
 
-func (s *Server) handleObservationById(req Call) (*zaplib.Message, error) {
+func (s *Server) handleObservationById(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapObservationByIdParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ObservationByIdParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColObservation, p.ProjectId(), p.ObservationId())
+	rec, err := s.findByExt(ColObservation, project, p.ObservationId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusOK, gen.NewObservation(gen.ObservationInput{Present: false}))
@@ -191,7 +191,7 @@ func (s *Server) handleObservationById(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, observationToBytes(rec))
 }
 
-func (s *Server) handleEventBatchIO(req Call) (*zaplib.Message, error) {
+func (s *Server) handleEventBatchIO(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapEventBatchIOParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad EventBatchIOParams: "+err.Error()))
@@ -203,7 +203,7 @@ func (s *Server) handleEventBatchIO(req Call) (*zaplib.Message, error) {
 		if err != nil {
 			return s.reply(req, StatusBadRequest, errorBody("bad ObservationRef: "+err.Error()))
 		}
-		rec, err := s.findByExt(ColObservation, p.ProjectId(), ref.Id())
+		rec, err := s.findByExt(ColObservation, project, ref.Id())
 		if err != nil {
 			if notFound(err) {
 				continue
@@ -222,12 +222,12 @@ func (s *Server) handleEventBatchIO(req Call) (*zaplib.Message, error) {
 
 // ============================== sessions ===================================
 
-func (s *Server) handleSessionHasAny(req Call) (*zaplib.Message, error) {
-	p, err := gen.WrapProjectScope(req.Payload)
+func (s *Server) handleSessionHasAny(req Call, project string) (*zaplib.Message, error) {
+	_, err := gen.WrapProjectScope(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ProjectScope: "+err.Error()))
 	}
-	_, err = s.app.FindFirstRecordByFilter(ColSession, "projectId = {:p}", map[string]any{"p": p.ProjectId()})
+	_, err = s.app.FindFirstRecordByFilter(ColSession, "projectId = {:p}", map[string]any{"p": project})
 	has := err == nil
 	if err != nil && !notFound(err) {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
@@ -235,12 +235,12 @@ func (s *Server) handleSessionHasAny(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, gen.NewBoolResult(gen.BoolResultInput{Value: has}))
 }
 
-func (s *Server) handleSessionById(req Call) (*zaplib.Message, error) {
+func (s *Server) handleSessionById(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapSessionByIdParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad SessionByIdParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColSession, p.ProjectId(), p.SessionId())
+	rec, err := s.findByExt(ColSession, project, p.SessionId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusOK, gen.NewSessionWithScores(gen.SessionWithScoresInput{
@@ -251,7 +251,7 @@ func (s *Server) handleSessionById(req Call) (*zaplib.Message, error) {
 	}
 	scoreRecs, err := s.app.FindRecordsByFilter(ColScore,
 		"projectId = {:p} && sessionId = {:s}", "timestamp", 0, 0,
-		map[string]any{"p": p.ProjectId(), "s": p.SessionId()})
+		map[string]any{"p": project, "s": p.SessionId()})
 	if err != nil {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
 	}
@@ -264,12 +264,12 @@ func (s *Server) handleSessionById(req Call) (*zaplib.Message, error) {
 	}))
 }
 
-func (s *Server) handleSessionBookmark(req Call) (*zaplib.Message, error) {
+func (s *Server) handleSessionBookmark(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapSessionBookmarkParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad SessionBookmarkParams: "+err.Error()))
 	}
-	rec, err := s.upsertSession(p.ProjectId(), p.SessionId())
+	rec, err := s.upsertSession(project, p.SessionId())
 	if err != nil {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
 	}
@@ -280,12 +280,12 @@ func (s *Server) handleSessionBookmark(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, s.sessionToBytes(rec))
 }
 
-func (s *Server) handleSessionPublish(req Call) (*zaplib.Message, error) {
+func (s *Server) handleSessionPublish(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapSessionPublishParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad SessionPublishParams: "+err.Error()))
 	}
-	rec, err := s.upsertSession(p.ProjectId(), p.SessionId())
+	rec, err := s.upsertSession(project, p.SessionId())
 	if err != nil {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
 	}
@@ -321,12 +321,12 @@ func (s *Server) upsertSession(projectId, sessionId string) (*core.Record, error
 
 // =============================== scores ====================================
 
-func (s *Server) handleScoreById(req Call) (*zaplib.Message, error) {
+func (s *Server) handleScoreById(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapScoreByIdParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ScoreByIdParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColScore, p.ProjectId(), p.ScoreId())
+	rec, err := s.findByExt(ColScore, project, p.ScoreId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusOK, gen.NewScore(gen.ScoreInput{Present: false}))
@@ -336,12 +336,12 @@ func (s *Server) handleScoreById(req Call) (*zaplib.Message, error) {
 	return s.reply(req, StatusOK, scoreToBytes(rec))
 }
 
-func (s *Server) handleScoreHasAny(req Call) (*zaplib.Message, error) {
-	p, err := gen.WrapProjectScope(req.Payload)
+func (s *Server) handleScoreHasAny(req Call, project string) (*zaplib.Message, error) {
+	_, err := gen.WrapProjectScope(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ProjectScope: "+err.Error()))
 	}
-	_, err = s.app.FindFirstRecordByFilter(ColScore, "projectId = {:p}", map[string]any{"p": p.ProjectId()})
+	_, err = s.app.FindFirstRecordByFilter(ColScore, "projectId = {:p}", map[string]any{"p": project})
 	has := err == nil
 	if err != nil && !notFound(err) {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
@@ -353,7 +353,7 @@ func (s *Server) handleScoreHasAny(req Call) (*zaplib.Message, error) {
 // updateAnnotationScore (update=true). Both upsert by (project, extId): on
 // create the id may be empty and one is generated; on update the id is required
 // and must already exist.
-func (s *Server) handleScoreUpsertAnnotation(req Call, update bool) (*zaplib.Message, error) {
+func (s *Server) handleScoreUpsertAnnotation(req Call, project string, update bool) (*zaplib.Message, error) {
 	p, err := gen.WrapAnnotationScoreParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad AnnotationScoreParams: "+err.Error()))
@@ -362,7 +362,7 @@ func (s *Server) handleScoreUpsertAnnotation(req Call, update bool) (*zaplib.Mes
 	id := p.Id()
 	var rec *core.Record
 	if id != "" {
-		rec, err = s.findByExt(ColScore, p.ProjectId(), id)
+		rec, err = s.findByExt(ColScore, project, id)
 		if err != nil && !notFound(err) {
 			return s.reply(req, StatusInternal, errorBody(err.Error()))
 		}
@@ -376,7 +376,7 @@ func (s *Server) handleScoreUpsertAnnotation(req Call, update bool) (*zaplib.Mes
 			return s.reply(req, StatusInternal, errorBody(cerr.Error()))
 		}
 		rec = core.NewRecord(col)
-		rec.Set(fProjectId, p.ProjectId())
+		rec.Set(fProjectId, project)
 		if id == "" {
 			id = newID()
 		}
@@ -413,12 +413,12 @@ func (s *Server) handleScoreUpsertAnnotation(req Call, update bool) (*zaplib.Mes
 	return s.reply(req, StatusOK, scoreToBytes(rec))
 }
 
-func (s *Server) handleScoreDeleteAnnotation(req Call) (*zaplib.Message, error) {
+func (s *Server) handleScoreDeleteAnnotation(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapScoreByIdParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ScoreByIdParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColScore, p.ProjectId(), p.ScoreId())
+	rec, err := s.findByExt(ColScore, project, p.ScoreId())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusOK, gen.NewMutationCount(gen.MutationCountInput{Count: 0}))
@@ -431,14 +431,14 @@ func (s *Server) handleScoreDeleteAnnotation(req Call) (*zaplib.Message, error) 
 	return s.reply(req, StatusOK, gen.NewMutationCount(gen.MutationCountInput{Count: 1}))
 }
 
-func (s *Server) handleEventScoresForTrace(req Call) (*zaplib.Message, error) {
+func (s *Server) handleEventScoresForTrace(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapEventScoresParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad EventScoresParams: "+err.Error()))
 	}
 	recs, err := s.app.FindRecordsByFilter(ColScore,
 		"projectId = {:p} && traceId = {:t}", "timestamp", 0, 0,
-		map[string]any{"p": p.ProjectId(), "t": p.TraceId()})
+		map[string]any{"p": project, "t": p.TraceId()})
 	if err != nil {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
 	}
@@ -451,7 +451,7 @@ func (s *Server) handleEventScoresForTrace(req Call) (*zaplib.Message, error) {
 
 // ============================ score configs ================================
 
-func (s *Server) handleScoreConfigAll(req Call) (*zaplib.Message, error) {
+func (s *Server) handleScoreConfigAll(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapScoreConfigAllParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ScoreConfigAllParams: "+err.Error()))
@@ -462,7 +462,7 @@ func (s *Server) handleScoreConfigAll(req Call) (*zaplib.Message, error) {
 		offset = int(p.Page()) * int(p.Limit())
 	}
 	recs, err := s.app.FindRecordsByFilter(ColScoreConfig,
-		"projectId = {:p}", "-created", limit, offset, map[string]any{"p": p.ProjectId()})
+		"projectId = {:p}", "-created", limit, offset, map[string]any{"p": project})
 	if err != nil {
 		return s.reply(req, StatusInternal, errorBody(err.Error()))
 	}
@@ -479,12 +479,12 @@ func (s *Server) handleScoreConfigAll(req Call) (*zaplib.Message, error) {
 	}))
 }
 
-func (s *Server) handleScoreConfigById(req Call) (*zaplib.Message, error) {
+func (s *Server) handleScoreConfigById(req Call, project string) (*zaplib.Message, error) {
 	p, err := gen.WrapScoreConfigByIdParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ScoreConfigByIdParams: "+err.Error()))
 	}
-	rec, err := s.findByExt(ColScoreConfig, p.ProjectId(), p.Id())
+	rec, err := s.findByExt(ColScoreConfig, project, p.Id())
 	if err != nil {
 		if notFound(err) {
 			return s.reply(req, StatusOK, gen.NewScoreConfig(gen.ScoreConfigInput{Present: false}))
@@ -498,7 +498,7 @@ func (s *Server) handleScoreConfigById(req Call) (*zaplib.Message, error) {
 // (update=true). create generates an id; update requires an existing row and
 // applies only the fields the patch set (the Set* flags distinguish omitted
 // from zero).
-func (s *Server) handleScoreConfigUpsert(req Call, update bool) (*zaplib.Message, error) {
+func (s *Server) handleScoreConfigUpsert(req Call, project string, update bool) (*zaplib.Message, error) {
 	p, err := gen.WrapScoreConfigWriteParams(req.Payload)
 	if err != nil {
 		return s.reply(req, StatusBadRequest, errorBody("bad ScoreConfigWriteParams: "+err.Error()))
@@ -506,7 +506,7 @@ func (s *Server) handleScoreConfigUpsert(req Call, update bool) (*zaplib.Message
 
 	var rec *core.Record
 	if update {
-		rec, err = s.findByExt(ColScoreConfig, p.ProjectId(), p.Id())
+		rec, err = s.findByExt(ColScoreConfig, project, p.Id())
 		if err != nil {
 			if notFound(err) {
 				return s.reply(req, StatusNotFound, errorBody("score config not found"))
@@ -519,7 +519,7 @@ func (s *Server) handleScoreConfigUpsert(req Call, update bool) (*zaplib.Message
 			return s.reply(req, StatusInternal, errorBody(cerr.Error()))
 		}
 		rec = core.NewRecord(col)
-		rec.Set(fProjectId, p.ProjectId())
+		rec.Set(fProjectId, project)
 		rec.Set(fExtId, newID())
 		rec.Set(fName, p.Name())
 		rec.Set(fDataType, p.DataType())
@@ -583,9 +583,29 @@ func (s *Server) handleScoreConfigUpsert(req Call, update bool) (*zaplib.Message
 // Until that shim exists these return Stubbed=true. They are still capability-
 // gated (PermAnalyticsRead) and parameter-validated, so wiring the data path is
 // purely additive — no API or auth change.
-func (s *Server) handleStub(req Call) (*zaplib.Message, error) {
-	s.logger.Warn("obs: analytics method stubbed (ClickHouse shim pending)", "method", req.Method)
-	return s.reply(req, StatusOK, gen.NewEmpty(gen.EmptyInput{Stubbed: true}))
+// stub answers a method whose data path is not wired yet. ONE policy in ONE
+// place: status 501, a warn naming the method and where the shim goes, and the
+// method's own typed zero body so a generated client still decodes the declared
+// return type.
+//
+// 501, never 200. A stubbed 200 carrying an empty result is indistinguishable
+// at the call site from a real query that matched nothing — the UI renders "no
+// data" and the missing backend never surfaces. The status is the one field a
+// caller cannot skip reading; a Stubbed flag in the body is one a caller can,
+// and eventually does.
+func (s *Server) stub(req Call, shim string, body []byte) (*zaplib.Message, error) {
+	s.logger.Warn("obs: method stubbed", "method", req.Method, "shim", shim)
+	return s.reply(req, StatusNotImpl, body)
+}
+
+// handleStub serves the trace/session/score/event analytics aggregations.
+// handleStub serves the trace/session/score/event analytics aggregations. It
+// takes project because the shim replacing it must scope its aggregation to the
+// tenant — carrying it now makes wiring the shim a body change rather than a
+// signature change threaded back through the dispatcher.
+func (s *Server) handleStub(req Call, project string) (*zaplib.Message, error) {
+	s.logger.Debug("obs: analytics stub hit", "project", project)
+	return s.stub(req, "ClickHouse analytics shim", gen.NewEmpty(gen.EmptyInput{Stubbed: true}))
 }
 
 // =========================== record <-> view ===============================
