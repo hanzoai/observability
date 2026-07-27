@@ -19,7 +19,7 @@
 # before being folded in here. It was never a separate concern: a dashboard is a
 # saved QUERY over exactly the traces/observations/scores this service already
 # owns, and its three analytics methods (chart, scoreHistogram, executeQuery) are
-# the same ClickHouse aggregations the trace/score analytics methods below need.
+# the same Datastore aggregations the trace/score analytics methods below need.
 # Split across two binaries that shim would have been written twice, against two
 # copies of the same OLTP model. One service, one analytics shim, one cap gate.
 #
@@ -56,7 +56,7 @@
 #     # --- events (OLTP read by FK, honest) -----------------------------
 #     eventScoresForTrace        @80 (EventScoresParams)      -> (ScoreList)
 #     eventBatchIO               @81 (EventBatchIOParams)     -> (ObservationIOList)
-#     # --- analytics (ClickHouse aggregations — STUBBED w/ TODO) --------
+#     # --- analytics (Datastore aggregations — STUBBED w/ TODO) --------
 #     traceAll                   @100 (TableQueryParams)      -> (Empty)   [STUB]
 #     traceCountAll              @101 (TableQueryParams)      -> (Empty)   [STUB]
 #     traceMetrics               @102 (TableQueryParams)      -> (Empty)   [STUB]
@@ -99,7 +99,7 @@
 #     createMonitor              @227 (MonitorReq)            -> (Monitor)
 #     updateMonitor              @228 (MonitorReq)            -> (Monitor)
 #     deleteMonitor              @229 (IdReq)                 -> (Mutation)
-#     # --- dashboard analytics (ClickHouse — STUBBED, shares the shim) --
+#     # --- dashboard analytics (Datastore — STUBBED, shares the shim) --
 #     chart                      @240 (AnalyticsReq)          -> (AnalyticsResult) [STUB]
 #     scoreHistogram             @241 (AnalyticsReq)          -> (AnalyticsResult) [STUB]
 #     executeQuery               @242 (AnalyticsReq)          -> (AnalyticsResult) [STUB]
@@ -142,7 +142,7 @@ struct MutationCount {
 
 # TraceByIdParams mirrors traceRouter.byId / byIdWithObservationsAndScores
 # input. Timestamp/FromTimestamp are unix-seconds (0 = unset); upstream they are
-# a ClickHouse partition hint, so they are advisory here.
+# a Datastore partition hint, so they are advisory here.
 struct TraceByIdParams {
     ProjectId     text @0
     TraceId       text @8
@@ -150,7 +150,7 @@ struct TraceByIdParams {
     FromTimestamp i64  @24
 }
 
-# Trace is the OLTP trace row. Mirrors the Prisma/ClickHouse Trace the tRPC
+# Trace is the OLTP trace row. Mirrors the Prisma/Datastore Trace the tRPC
 # `byId` returned, with metadata/input/output already stringified. Tags is a
 # JSON-encoded []string carried as text.
 struct Trace {
@@ -448,7 +448,7 @@ struct ScoreConfigWriteParams {
 # list/count procedures take (traceRouter.all/countAll/metrics,
 # sessionRouter.all/countAll, scoresRouter.all/countAll, eventsRouter.all). Filter
 # and OrderBy are carried as opaque JSON so the schema need not mirror the full
-# console filter AST. These hit ClickHouse upstream → STUBBED.
+# console filter AST. These hit Datastore upstream → STUBBED.
 struct TableQueryParams {
     ProjectId   text @0
     Filter      text @8    # JSON filter AST
@@ -459,7 +459,7 @@ struct TableQueryParams {
 }
 
 # AnalyticsParams covers the score-analytics router (getScoreIdentifiers,
-# estimateScoreComparisonSize, getScoreComparisonAnalytics) — a heavy ClickHouse
+# estimateScoreComparisonSize, getScoreComparisonAnalytics) — a heavy Datastore
 # cross-tabulation → STUBBED.
 struct AnalyticsParams {
     ProjectId  text @0
@@ -721,9 +721,9 @@ struct StringResult {
     Value text @0
 }
 
-# AnalyticsResult carries a ClickHouse query result back to the UI as a JSON
+# AnalyticsResult carries a Datastore query result back to the UI as a JSON
 # array (DatabaseRow[] / histogram bins / executeQuery rows). Opaque to the
-# transport — see server.go for the ClickHouse-shim wiring location.
+# transport — see server.go for the Datastore wiring location.
 struct AnalyticsResult {
     Rows text @0   # JSON array
 }

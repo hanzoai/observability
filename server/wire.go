@@ -80,7 +80,7 @@ const (
 	MethodEventScoresForTrace uint32 = 80
 	MethodEventBatchIO        uint32 = 81
 
-	// analytics — ClickHouse aggregations (STUBBED; see handlers.go handleStub).
+	// analytics — Datastore aggregations (STUBBED; see handlers.go handleStub).
 	MethodTraceAll                 uint32 = 100
 	MethodTraceCountAll            uint32 = 101
 	MethodTraceMetrics             uint32 = 102
@@ -134,7 +134,7 @@ const (
 	MethodUpdateMonitor uint32 = 228
 	MethodDeleteMonitor uint32 = 229
 
-	// dashboard analytics — ClickHouse (STUBBED; shares handleStub with the
+	// dashboard analytics — Datastore (STUBBED; shares handleStub with the
 	// trace/score analytics above, which is the point of the merge).
 	MethodChart          uint32 = 240
 	MethodScoreHistogram uint32 = 241

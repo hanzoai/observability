@@ -517,7 +517,7 @@ func TestAnalyticsStubsReturnStubbed(t *testing.T) {
 	} {
 		// 501, not 200. A stubbed 200 carrying an empty aggregate is
 		// indistinguishable at the call site from a real query that matched
-		// nothing, so the UI would render "no data" and the missing ClickHouse
+		// nothing, so the UI would render "no data" and the missing Datastore
 		// backend would never surface. The status is the field a caller cannot
 		// skip reading.
 		if got := cli.Probe(ctx, m, payload); got != server.StatusNotImpl {

@@ -12,7 +12,7 @@ import (
 // handlers.go — one method body per tRPC procedure. Honest handlers read/write
 // the Base collections in collections.go and scope every query to the
 // capability's project. The analytics handlers (handleStub) return an explicit
-// Stubbed result with a TODO pointing at the ClickHouse shim that must replace
+// Stubbed result with a TODO pointing at the Datastore shim that must replace
 // them — they do NOT fabricate aggregate data.
 //
 // Each handler decodes its typed params view from req.Payload, does its work,
@@ -57,7 +57,7 @@ func (s *Server) handleTraceWithDetail(req Call, project string) (*zaplib.Messag
 	}
 
 	// Child observations + scores for this trace (the join the tRPC byIdWith…
-	// procedure assembled from ClickHouse; here a project-scoped FK lookup).
+	// procedure assembled from Datastore; here a project-scoped FK lookup).
 	obsRecs, err := s.app.FindRecordsByFilter(ColObservation,
 		"projectId = {:p} && traceId = {:t}", "startTime", 0, 0,
 		map[string]any{"p": project, "t": p.TraceId()})
@@ -553,7 +553,7 @@ func (s *Server) handleScoreConfigUpsert(req Call, project string, update bool) 
 
 // ====================== analytics (STUBBED with TODO) ======================
 
-// handleStub answers the ClickHouse-backed analytics methods. These are
+// handleStub answers the Datastore-backed analytics methods. These are
 // columnar aggregations (paginated/filtered table scans, group-bys,
 // cross-tabulations) that CANNOT be honestly served from Base OLTP rows — doing
 // so would either fabricate numbers or silently degrade to a full table scan per
@@ -605,7 +605,7 @@ func (s *Server) stub(req Call, shim string, body []byte) (*zaplib.Message, erro
 // signature change threaded back through the dispatcher.
 func (s *Server) handleStub(req Call, project string) (*zaplib.Message, error) {
 	s.logger.Debug("obs: analytics stub hit", "project", project)
-	return s.stub(req, "ClickHouse analytics shim", gen.NewEmpty(gen.EmptyInput{Stubbed: true}))
+	return s.stub(req, "Datastore analytics", gen.NewEmpty(gen.EmptyInput{Stubbed: true}))
 }
 
 // =========================== record <-> view ===============================

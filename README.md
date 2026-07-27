@@ -4,12 +4,12 @@ A Hanzo Base-native Go service binary in the console tRPC→ZAP migration. It
 serves the **Observability** capability — the Langfuse-style trace / observation
 / score OLTP backbone, plus the dashboards/widgets/tables/presets/monitors
 presentation layer over it — that the Next.js console previously ran in-process
-as 13 tRPC routers hitting ClickHouse + Prisma.
+as 13 tRPC routers hitting Datastore + Prisma.
 
 The dashboards half shipped first as a standalone binary (`hanzoai/dashboards`,
 msgType 206) and was folded in: a dashboard is a saved query over the very
 traces/observations/scores this service owns, and both halves were waiting on the
-same ClickHouse shim. One service, one shim, one capability gate. Those methods
+same Datastore shim. One service, one shim, one capability gate. Those methods
 keep their original ordinals offset by 200, and live in the `dash_*.go` files.
 
 Replaces these console routers:
@@ -32,7 +32,7 @@ Replaces these console routers:
 
 **Pattern:** Go binary on [Hanzo Base](../base) (embedded encrypted SQLite +
 plugins) exposing a typed [ZAP](../zap) capability-RPC interface. No Prisma, no
-Postgres-as-source-of-truth, no Mongo, no tRPC in the backend. ClickHouse is
+Postgres-as-source-of-truth, no Mongo, no tRPC in the backend. Datastore is
 **not** the source of truth here — Base is the OLTP store; the heavy columnar
 analytics aggregations are documented stubs awaiting a Go analytics shim (see
 below).
@@ -111,17 +111,17 @@ bit → verify signature when an issuer registry is wired, per
 | `scoreConfigCreate` | 62 | ScoreConfigWrite | create a score config |
 | `scoreConfigUpdate` | 63 | ScoreConfigWrite | patch a score config |
 
-### Stubbed methods (ClickHouse aggregations — follow-up)
+### Stubbed methods (Datastore aggregations — follow-up)
 
 These are columnar table-scans / group-bys / cross-tabulations that cannot be
 honestly served from Base OLTP rows without either fabricating numbers or
 silently degrading to a full scan per request. They return `Empty{Stubbed:true}`
 (still capability-gated on `AnalyticsRead`, still parameter-validated). The exact
-upstream ClickHouse queries to port are enumerated in `server/handlers.go`
+upstream Datastore queries to port are enumerated in `server/handlers.go`
 `handleStub` — wiring a Go analytics reader (`server/analytics.go`) is purely
 additive, no API/auth change.
 
-| method | @ord | replaces (ClickHouse helper) |
+| method | @ord | replaces (Datastore helper) |
 |---|---|---|
 | `traceAll` / `traceCountAll` | 100 / 101 | `getTracesTable` / `…Count` |
 | `traceMetrics` | 102 | `getTracesTableMetrics` (quantiles, token/cost sums) |

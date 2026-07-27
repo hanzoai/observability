@@ -9,7 +9,7 @@ It clones the [ui-customization](../ui-customization) reference pattern.
 The dashboards half shipped first as its own binary (hanzoai/dashboards, msgType
 206) and was folded in here. It was never a separate concern: a dashboard is a
 saved QUERY over the traces/observations/scores this service already owns, and
-its analytics methods are the same ClickHouse aggregations the trace/score
+its analytics methods are the same Datastore aggregations the trace/score
 analytics need. Two binaries meant writing that shim twice against two copies of
 one OLTP model. The dashboards ordinals live at 200+ (their original 0–29 offset
 by 200); its files are the `dash_*.go` set.
@@ -59,11 +59,11 @@ the data structs; `gen/` is its Go projection via `make zap-gen`. Never hand-edi
   it pipelines off. The @0 assumption is pinned by
   `TestEveryRequestStructCarriesProjectIdAtZero`; a new request struct that puts
   another text field first fails that test instead of silently mis-scoping.
-- **One backend:** Hanzo Base. No Prisma, Postgres/ClickHouse-as-source-of-truth,
+- **One backend:** Hanzo Base. No Prisma, Postgres/Datastore-as-source-of-truth,
   Mongo, Redis, tRPC, nginx. OLTP rows live in the `obs_*` Base collections
   (encrypted SQLite via the vault plugin when `--vaultDir` is set), every query
   scoped to `projectId`.
-- **Honest about the gap — and loud about it:** the ClickHouse columnar
+- **Honest about the gap — and loud about it:** the Datastore columnar
   aggregations (`*All`/`*CountAll`/`metrics`/`filterOptions`/score-comparison,
   plus `chart`/`scoreHistogram`/`executeQuery`) and the BullMQ
   `isBatchActionInProgress` are NOT faked on OLTP rows. They answer **501** via

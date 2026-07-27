@@ -308,7 +308,7 @@ func (c *Client) ScoreConfigUpdate(ctx context.Context, p gen.ScoreConfigWritePa
 
 // ====================== analytics (STUBBED with TODO) ======================
 
-// AnalyticsStub calls any of the stubbed ClickHouse analytics methods and
+// AnalyticsStub calls any of the stubbed Datastore analytics methods and
 // returns the Empty result (Stubbed=true until the shim lands). Exposed so a
 // caller can probe whether the analytics path is wired without special-casing
 // each method.

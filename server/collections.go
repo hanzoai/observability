@@ -12,9 +12,9 @@ import (
 // Reads scope to projectId; the service NEVER returns a row outside the
 // capability's project.
 //
-// This mirrors the Prisma/ClickHouse schema the 8 tRPC routers read. ClickHouse
+// This mirrors the Prisma/Datastore schema the 8 tRPC routers read. Datastore
 // is the analytics store upstream; here Base is the OLTP source of truth (per
-// the migration directive "use Base for OLTP; TODO ClickHouse shim"). The
+// the migration directive "use Base for OLTP; TODO Datastore shim"). The
 // analytics aggregations that genuinely need columnar scans are stubbed in
 // handlers.go — they are NOT backed by these collections.
 const (

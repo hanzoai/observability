@@ -161,20 +161,20 @@ func (s *Server) handleDeleteDashboard(req Call, project string) (*zaplib.Messag
 // ─────────────────────────── dashboardRouter analytics ─────────────────────
 
 // handleAnalytics serves chart / scoreHistogram / executeQuery. These read from
-// ClickHouse (OLAP), NOT from Base (OLTP). The query implementations live in
+// Hanzo Datastore (OLAP), NOT from Base (OLTP). The query implementations live in
 // console's @hanzo/shared analytics layer (getScoreAggregate,
 // getNumericScoreHistogram, getObservation*ByTime, and the query-builder in
-// features/query). Until the ClickHouse client is wired into this binary the
+// features/query). Until the Datastore client is wired into this binary the
 // method returns 501; it never fabricates rows.
 //
-// TODO(clickhouse): wire a ClickHouse reader and port the analytics functions
+// TODO(datastore): wire a Datastore reader and port the analytics functions
 //
 //	from ~/work/hanzo/console/web/../packages/shared/src/server (score-analytics
 //	+ the features/query executeQuery builder) into a server/analytics.go shim
 //	that returns AnalyticsResult.Rows as the JSON array the UI already expects.
 func (s *Server) handleAnalytics(req Call, project string) (*zaplib.Message, error) {
 	return s.fail(req, StatusNotImpl,
-		"analytics queries require the ClickHouse shim (server/analytics.go) — not yet wired")
+		"analytics queries require the Datastore shim (server/analytics.go) — not yet wired")
 }
 
 // ──────────────────────────── dashboardWidgetRouter ────────────────────────

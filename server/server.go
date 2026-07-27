@@ -416,7 +416,7 @@ func (s *Server) dispatch(req Call, project string) (*zaplib.Message, error) {
 	// --- table batch-action (BullMQ queue — STUBBED) ---
 	case MethodIsBatchActionInProgress:
 		return s.handleIsBatchActionInProgress(req, project)
-	// --- dashboard analytics (ClickHouse — STUBBED, same shim as above) ---
+	// --- dashboard analytics (Datastore — STUBBED, same shim as above) ---
 	case MethodChart, MethodScoreHistogram, MethodExecuteQuery:
 		return s.handleAnalytics(req, project)
 

@@ -405,7 +405,7 @@ func TestZeroPermissionDenied(t *testing.T) {
 }
 
 // TestAnalyticsNotImplemented locks the contract: analytics methods are wired to
-// 501 until the ClickHouse shim lands — they must NOT fabricate data.
+// 501 until the Datastore shim lands — they must NOT fabricate data.
 func TestAnalyticsNotImplemented(t *testing.T) {
 	addr, peer, stop := newService(t)
 	defer stop()
@@ -431,7 +431,7 @@ func TestAnalyticsNotImplemented(t *testing.T) {
 			t.Fatalf("%s: status=%d, want 501 (not-implemented TODO)", m.name, status)
 		}
 	}
-	t.Logf("analytics + queue methods correctly return 501 (ClickHouse/BullMQ shims pending)")
+	t.Logf("analytics + queue methods correctly return 501 (Datastore/BullMQ shims pending)")
 }
 
 // TestPipelineDashboardThenWidget is the load-bearing pipelining proof: the
